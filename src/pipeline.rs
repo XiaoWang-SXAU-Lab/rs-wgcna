@@ -6,7 +6,7 @@ use faer::Mat;
 use crate::correlation::pearson;
 use crate::cutree::cutree_hybrid;
 use crate::eigengene::module_eigengene;
-use crate::hclust::hclust_average;
+use crate::hclust::{hclust_average, HClust};
 use crate::merge::{merge_close_modules, STANDARD_COLORS};
 use crate::network::{NetworkType, TomDenom, TomType};
 use crate::tom::tom_from_cor;
@@ -27,9 +27,9 @@ pub fn labels_to_colors(labels: &[i32]) -> Vec<String> {
         .collect()
 }
 
-/// Single-block module detection. Returns final module colors (one per gene).
+/// Single-block module detection. Returns (final module colors, dendrogram).
 #[allow(clippy::too_many_arguments)]
-pub fn blockwise_modules_single(
+pub fn blockwise_modules_with_tree(
     expr: &Mat<f64>,
     power: f64,
     network_type: NetworkType,
@@ -40,9 +40,8 @@ pub fn blockwise_modules_single(
     deep_split: usize,
     detect_cut_height: f64,
     threads: usize,
-) -> Vec<String> {
+) -> (Vec<String>, HClust) {
     let g = expr.nrows();
-    let n = expr.ncols();
 
     // 1. correlation -> TOM -> dissimilarity.
     let cor = pearson(expr, threads).expect("correlation");
@@ -76,8 +75,37 @@ pub fn blockwise_modules_single(
 
     // 4. merge close modules + relabel.
     let colors = labels_to_colors(&labels);
-    let _ = n;
-    merge_close_modules(expr, &colors, merge_cut_height, threads)
+    let merged = merge_close_modules(expr, &colors, merge_cut_height, threads);
+    (merged, tree)
+}
+
+/// Single-block module detection. Returns final module colors (one per gene).
+#[allow(clippy::too_many_arguments)]
+pub fn blockwise_modules_single(
+    expr: &Mat<f64>,
+    power: f64,
+    network_type: NetworkType,
+    tom_type: TomType,
+    tom_denom: TomDenom,
+    min_module_size: usize,
+    merge_cut_height: f64,
+    deep_split: usize,
+    detect_cut_height: f64,
+    threads: usize,
+) -> Vec<String> {
+    blockwise_modules_with_tree(
+        expr,
+        power,
+        network_type,
+        tom_type,
+        tom_denom,
+        min_module_size,
+        merge_cut_height,
+        deep_split,
+        detect_cut_height,
+        threads,
+    )
+    .0
 }
 
 /// Remove modules with too few high-kME genes, and trim low-kME genes

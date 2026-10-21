@@ -127,3 +127,28 @@ pub fn read_trait(path: &str) -> Result<(Vec<String>, Vec<String>, Mat<f64>)> {
     }
     Ok((samples, traits, data))
 }
+
+/// Write a genes x samples expression matrix as a tab-delimited TSV
+/// (header = `ID<TAB>sample1<TAB>...`).
+pub fn write_expression(
+    path: &str,
+    data: &Mat<f64>,
+    genes: &[String],
+    samples: &[String],
+) -> Result<()> {
+    use std::io::Write;
+    let mut f = std::fs::File::create(path)?;
+    write!(f, "ID")?;
+    for s in samples {
+        write!(f, "\t{s}")?;
+    }
+    writeln!(f)?;
+    for i in 0..data.nrows() {
+        write!(f, "{}", genes[i])?;
+        for j in 0..data.ncols() {
+            write!(f, "\t{:.6}", data[(i, j)])?;
+        }
+        writeln!(f)?;
+    }
+    Ok(())
+}
