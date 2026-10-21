@@ -1,0 +1,21 @@
+[package]
+name = "rs-wgcna"
+version = "0.1.0"
+edition = "2024"
+description = "A high-performance, zero-configuration reimplementation of the WGCNA computational kernel in pure Rust"
+license = "MIT"
+repository = "https://github.com/XiaoWang-SXAU-Lab/rs-wgcna"
+homepage = "https://github.com/XiaoWang-SXAU-Lab/rs-wgcna"
+authors = ["Shawn Wang <ShawnWx2019@users.noreply.github.com>"]
+keywords = ["wgcna", "co-expression", "bioinformatics", "network", "transcriptomics", "gene-expression"]
+categories = ["science", "algorithms"]
+readme = "README.md"
+
+[dependencies]
+anyhow = "1.0.104"
+csv = "1.4.0"
+faer = "0.24.4"
+rayon = "1.12.0"
+serde = "1.0.229"
+serde_json = "1.0.154"
+thiserror = "2.0.21"

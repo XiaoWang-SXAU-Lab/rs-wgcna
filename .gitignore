@@ -1,0 +1,8 @@
+/target
+/testdata
+/rust_out
+/r_out
+/benchdata
+*.RData
+.Rhistory
+.DS_Store
