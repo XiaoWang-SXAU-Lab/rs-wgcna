@@ -14,14 +14,17 @@ use faer::Mat;
 use serde::{Deserialize, Serialize};
 
 use rs_wgcna::correlation::pearson;
+use rs_wgcna::eigengene::module_eigengene;
 use rs_wgcna::filter::{
     low_expression_mask, normalize, top_genes_by, FilterMethod, NormalizeMethod,
 };
 use rs_wgcna::hclust::HClust;
-use rs_wgcna::io::{read_expression, write_expression};
+use rs_wgcna::io::{read_expression, read_trait, write_expression};
+use rs_wgcna::module_trait::module_trait_cor;
 use rs_wgcna::network::{NetworkType, TomDenom, TomType};
 use rs_wgcna::pipeline::blockwise_modules_with_tree;
 use rs_wgcna::sft::pick_soft_threshold;
+use rs_wgcna::stats::pearson_vec;
 
 // ---------------------------------------------------------------------------
 // Parameters (read from <job-dir>/params.json)
@@ -35,6 +38,12 @@ struct Params {
     soft_threshold: SoftThresholdParams,
     #[serde(default)]
     network: NetworkParams,
+    #[serde(default)]
+    module_trait: ModuleTraitParams,
+    #[serde(default)]
+    module_detail: ModuleDetailParams,
+    #[serde(default)]
+    hub: HubParams,
 }
 
 #[derive(Debug, Deserialize)]
@@ -103,6 +112,47 @@ impl Default for NetworkParams {
     }
 }
 
+#[derive(Debug, Deserialize, Default)]
+struct ModuleTraitParams {}
+
+#[derive(Debug, Deserialize)]
+#[serde(default)]
+struct ModuleDetailParams {
+    select_module: String,
+    select_trait: String,
+}
+
+impl Default for ModuleDetailParams {
+    fn default() -> Self {
+        ModuleDetailParams {
+            select_module: String::new(),
+            select_trait: String::new(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(default)]
+struct HubParams {
+    select_module: String,
+    select_trait: String,
+    kme_cutoff: f64,
+    gs_cutoff: f64,
+    weight_threshold: f64,
+}
+
+impl Default for HubParams {
+    fn default() -> Self {
+        HubParams {
+            select_module: String::new(),
+            select_trait: String::new(),
+            kme_cutoff: 0.8,
+            gs_cutoff: 0.5,
+            weight_threshold: 0.02,
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Output types
 // ---------------------------------------------------------------------------
@@ -148,6 +198,48 @@ impl From<&HClust> for DendrogramOutput {
             order: h.order.clone(),
         }
     }
+}
+
+/// Minimal view of step3_modules.json needed by downstream steps.
+#[derive(Deserialize, Default)]
+struct ModulesJson {
+    #[serde(default)]
+    genes: Vec<String>,
+    #[serde(default)]
+    colors: Vec<String>,
+}
+
+#[derive(Serialize)]
+struct MtaitOutput {
+    modules: Vec<String>,
+    traits: Vec<String>,
+    cor: Vec<Vec<f64>>,
+    p: Vec<Vec<f64>>,
+    eigengenes: Vec<Vec<f64>>,
+}
+
+#[derive(Serialize)]
+struct DetailOutput {
+    module: String,
+    trait_name: String,
+    genes: Vec<String>,
+    gs: Vec<f64>,
+    mm: Vec<f64>,
+    expression: Vec<Vec<f64>>,
+}
+
+#[derive(Serialize)]
+struct HubGene {
+    gene: String,
+    kme: f64,
+    gs: f64,
+}
+
+#[derive(Serialize)]
+struct HubOutput {
+    module: String,
+    trait_name: String,
+    hub_genes: Vec<HubGene>,
 }
 
 // ---------------------------------------------------------------------------
@@ -359,6 +451,154 @@ fn run_network(job_dir: &Path, params: &NetworkParams, threads: usize) {
     write_progress(job_dir, "network", "done", 1.0, "module detection done");
 }
 
+fn read_json<T: for<'de> Deserialize<'de>>(job_dir: &Path, name: &str) -> T {
+    let s = std::fs::read_to_string(job_dir.join(name)).unwrap_or_else(|_| "{}".into());
+    serde_json::from_str(&s).unwrap_or_else(|e| panic!("invalid {name}: {e}"))
+}
+
+fn write_json<T: Serialize>(job_dir: &Path, name: &str, v: &T) {
+    let s = serde_json::to_string(v).expect("serialize");
+    std::fs::write(job_dir.join(name), s).expect("write output");
+}
+
+fn read_modules(job_dir: &Path) -> ModulesJson {
+    read_json(job_dir, "step3_modules.json")
+}
+
+fn sorted_modules(colors: &[String]) -> Vec<String> {
+    let mut mods: Vec<String> = colors.to_vec();
+    mods.sort();
+    mods.dedup();
+    mods.into_iter().filter(|c| c != "grey").collect()
+}
+
+fn trait_column(traits: &[String], name: &str) -> usize {
+    traits.iter().position(|t| t == name).unwrap_or(0)
+}
+
+fn run_module_trait(job_dir: &Path, _params: &ModuleTraitParams, _threads: usize) {
+    write_progress(job_dir, "module_trait", "running", 0.2, "reading modules...");
+    let exp = read_filtered(job_dir);
+    let mj = read_modules(job_dir);
+    let (_samples, traits, tdata) =
+        read_trait(job_dir.join("trait.tsv").to_str().unwrap()).expect("read trait.tsv");
+
+    let mods = sorted_modules(&mj.colors);
+    let g = mj.genes.len();
+    let n = exp.n_samples();
+    let mut mes = Mat::<f64>::zeros(n, mods.len());
+    for (mi, m) in mods.iter().enumerate() {
+        let idx: Vec<usize> = (0..g).filter(|&i| mj.colors[i] == *m).collect();
+        let me = module_eigengene(&exp.data, &idx);
+        for j in 0..n {
+            mes[(j, mi)] = me[j];
+        }
+    }
+
+    write_progress(job_dir, "module_trait", "running", 0.7, "correlating with traits...");
+    let (cor, p) = module_trait_cor(&mes, &tdata);
+    let cor_v: Vec<Vec<f64>> = (0..cor.nrows())
+        .map(|i| (0..cor.ncols()).map(|j| cor[(i, j)]).collect())
+        .collect();
+    let p_v: Vec<Vec<f64>> = (0..p.nrows())
+        .map(|i| (0..p.ncols()).map(|j| p[(i, j)]).collect())
+        .collect();
+    let me_v: Vec<Vec<f64>> = (0..mes.nrows())
+        .map(|i| (0..mes.ncols()).map(|j| mes[(i, j)]).collect())
+        .collect();
+
+    write_json(
+        job_dir,
+        "step4_mtrait.json",
+        &MtaitOutput {
+            modules: mods,
+            traits,
+            cor: cor_v,
+            p: p_v,
+            eigengenes: me_v,
+        },
+    );
+    write_progress(job_dir, "module_trait", "done", 1.0, "module-trait done");
+}
+
+fn run_module_detail(job_dir: &Path, params: &ModuleDetailParams, _threads: usize) {
+    let exp = read_filtered(job_dir);
+    let mj = read_modules(job_dir);
+    let (_s, traits, tdata) =
+        read_trait(job_dir.join("trait.tsv").to_str().unwrap()).expect("read trait.tsv");
+    let t_idx = trait_column(&traits, &params.select_trait);
+    let trait_v: Vec<f64> = (0..tdata.nrows()).map(|j| tdata[(j, t_idx)]).collect();
+
+    let g = mj.genes.len();
+    let mod_idx: Vec<usize> = (0..g).filter(|&i| mj.colors[i] == params.select_module).collect();
+    let me = module_eigengene(&exp.data, &mod_idx);
+
+    let mut genes = Vec::new();
+    let mut gs = Vec::new();
+    let mut mm = Vec::new();
+    let mut expression = Vec::new();
+    for &gi in &mod_idx {
+        let gene: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(gi, j)]).collect();
+        genes.push(mj.genes[gi].clone());
+        gs.push(pearson_vec(&gene, &trait_v));
+        mm.push(pearson_vec(&gene, &me));
+        expression.push(gene);
+    }
+
+    write_json(
+        job_dir,
+        "step5_detail.json",
+        &DetailOutput {
+            module: params.select_module.clone(),
+            trait_name: params.select_trait.clone(),
+            genes,
+            gs,
+            mm,
+            expression,
+        },
+    );
+    write_progress(job_dir, "module_detail", "done", 1.0, "module detail done");
+}
+
+fn run_hub(job_dir: &Path, params: &HubParams, _threads: usize) {
+    let exp = read_filtered(job_dir);
+    let mj = read_modules(job_dir);
+    let (_s, traits, tdata) =
+        read_trait(job_dir.join("trait.tsv").to_str().unwrap()).expect("read trait.tsv");
+    let t_idx = trait_column(&traits, &params.select_trait);
+    let trait_v: Vec<f64> = (0..tdata.nrows()).map(|j| tdata[(j, t_idx)]).collect();
+
+    let g = mj.genes.len();
+    let mod_idx: Vec<usize> = (0..g).filter(|&i| mj.colors[i] == params.select_module).collect();
+    let me = module_eigengene(&exp.data, &mod_idx);
+
+    let mut hub = Vec::new();
+    for &gi in &mod_idx {
+        let gene: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(gi, j)]).collect();
+        let kme = pearson_vec(&gene, &me).abs();
+        let gs = pearson_vec(&gene, &trait_v).abs();
+        if kme > params.kme_cutoff && gs > params.gs_cutoff {
+            hub.push(HubGene {
+                gene: mj.genes[gi].clone(),
+                kme,
+                gs,
+            });
+        }
+    }
+    hub.sort_by(|a, b| b.kme.partial_cmp(&a.kme).unwrap());
+
+    write_json(
+        job_dir,
+        "step6_hub.json",
+        &HubOutput {
+            module: params.select_module.clone(),
+            trait_name: params.select_trait.clone(),
+            hub_genes: hub,
+        },
+    );
+    write_progress(job_dir, "hub", "done", 1.0, "hub genes done");
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -390,7 +630,7 @@ fn main() {
     }
 
     let job_dir = job_dir.unwrap_or_else(|| {
-        eprintln!("usage: rs-wgcna-worker --job-dir <dir> --step <filter|soft_threshold|network> [--threads N]");
+        eprintln!("usage: rs-wgcna-worker --job-dir <dir> --step <filter|soft_threshold|network|module_trait|module_detail|hub> [--threads N]");
         std::process::exit(2);
     });
     let step = step.unwrap_or_else(|| {
@@ -404,6 +644,9 @@ fn main() {
         "filter" => run_filter(&job_dir, &params.filter),
         "soft_threshold" => run_soft_threshold(&job_dir, &params.soft_threshold, threads),
         "network" => run_network(&job_dir, &params.network, threads),
+        "module_trait" => run_module_trait(&job_dir, &params.module_trait, threads),
+        "module_detail" => run_module_detail(&job_dir, &params.module_detail, threads),
+        "hub" => run_hub(&job_dir, &params.hub, threads),
         other => {
             eprintln!("unknown step: {other}");
             std::process::exit(2);
