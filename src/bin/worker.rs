@@ -18,7 +18,7 @@ use rs_wgcna::eigengene::module_eigengene;
 use rs_wgcna::filter::{
     low_expression_mask, normalize, top_genes_by, FilterMethod, NormalizeMethod,
 };
-use rs_wgcna::hclust::HClust;
+use rs_wgcna::hclust::{hclust_average, HClust};
 use rs_wgcna::io::{read_expression, read_trait, write_expression};
 use rs_wgcna::module_trait::module_trait_cor;
 use rs_wgcna::network::{NetworkType, TomDenom, TomType};
@@ -54,6 +54,7 @@ struct FilterParams {
     filter_method: String, // mad | var
     sample_percentage: f64,
     cutoff: f64,
+    exclude_samples: Vec<String>,
 }
 
 impl Default for FilterParams {
@@ -64,6 +65,7 @@ impl Default for FilterParams {
             filter_method: "mad".into(),
             sample_percentage: 0.0,
             cutoff: 1.0,
+            exclude_samples: Vec::new(),
         }
     }
 }
@@ -226,6 +228,7 @@ struct DetailOutput {
     gs: Vec<f64>,
     mm: Vec<f64>,
     expression: Vec<Vec<f64>>,
+    eigengene: Vec<f64>,
 }
 
 #[derive(Serialize)]
@@ -317,7 +320,27 @@ fn read_power(job_dir: &Path, params: &NetworkParams) -> f64 {
 
 fn run_filter(job_dir: &Path, params: &FilterParams) {
     write_progress(job_dir, "filter", "running", 0.0, "normalizing...");
-    let exp = read_expression(job_dir.join("expr.tsv").to_str().unwrap()).expect("read expr.tsv");
+    let mut exp = read_expression(job_dir.join("expr.tsv").to_str().unwrap()).expect("read expr.tsv");
+    let n_genes_before = exp.n_genes();
+    let n_samples_before = exp.n_samples();
+
+    // Remove excluded (outlier) samples before filtering.
+    if !params.exclude_samples.is_empty() {
+        let keep_cols: Vec<usize> = (0..exp.n_samples())
+            .filter(|&j| !params.exclude_samples.iter().any(|s| *s == exp.samples[j]))
+            .collect();
+        let mut data = Mat::<f64>::zeros(exp.n_genes(), keep_cols.len());
+        let mut samples = Vec::with_capacity(keep_cols.len());
+        for (c, &j) in keep_cols.iter().enumerate() {
+            for g in 0..exp.n_genes() {
+                data[(g, c)] = exp.data[(g, j)];
+            }
+            samples.push(exp.samples[j].clone());
+        }
+        exp.data = data;
+        exp.samples = samples;
+    }
+
     let norm = normalize(&exp.data, parse_norm(&params.normalize_method));
 
     write_progress(job_dir, "filter", "running", 0.4, "filtering low-expression genes...");
@@ -326,6 +349,7 @@ fn run_filter(job_dir: &Path, params: &FilterParams) {
     } else {
         vec![true; exp.n_genes()]
     };
+    let n_genes_after_low = keep.iter().filter(|&&k| k).count();
 
     write_progress(job_dir, "filter", "running", 0.7, "selecting top genes...");
     // Select top-N by MAD/Var among the kept genes.
@@ -364,6 +388,33 @@ fn run_filter(job_dir: &Path, params: &FilterParams) {
     for gi in &filtered_genes {
         writeln!(f, "{gi}").unwrap();
     }
+
+    // Sample clustering tree (average-linkage on Euclidean sample distance).
+    write_progress(job_dir, "filter", "running", 0.9, "clustering samples...");
+    let ns = filtered.ncols();
+    let mut diss = Mat::<f64>::zeros(ns, ns);
+    for i in 0..ns {
+        for j in 0..ns {
+            let mut s = 0.0;
+            for g in 0..filtered.nrows() {
+                let d = filtered[(g, i)] - filtered[(g, j)];
+                s += d * d;
+            }
+            diss[(i, j)] = s.sqrt();
+        }
+    }
+    let tree = hclust_average(&diss);
+
+    let out = serde_json::json!({
+        "n_genes_before": n_genes_before,
+        "n_genes_after_low": n_genes_after_low,
+        "n_genes_final": filtered_genes.len(),
+        "n_samples_before": n_samples_before,
+        "n_samples": exp.samples.len(),
+        "samples": exp.samples,
+        "sample_tree": { "merge": tree.merge, "height": tree.height, "order": tree.order },
+    });
+    write_json(job_dir, "step1_filter.json", &out);
 
     write_progress(
         job_dir,
@@ -472,6 +523,20 @@ fn sorted_modules(colors: &[String]) -> Vec<String> {
     mods.into_iter().filter(|c| c != "grey").collect()
 }
 
+/// Fallback module selection for one-step mode: the largest non-grey module.
+fn largest_module(colors: &[String]) -> String {
+    let mut sizes: BTreeMap<&str, usize> = BTreeMap::new();
+    for c in colors {
+        *sizes.entry(c.as_str()).or_insert(0) += 1;
+    }
+    sizes
+        .into_iter()
+        .filter(|(c, _)| *c != "grey")
+        .max_by_key(|(_, n)| *n)
+        .map(|(c, _)| c.to_string())
+        .unwrap_or_else(|| "grey".to_string())
+}
+
 fn trait_column(traits: &[String], name: &str) -> usize {
     traits.iter().position(|t| t == name).unwrap_or(0)
 }
@@ -529,8 +594,13 @@ fn run_module_detail(job_dir: &Path, params: &ModuleDetailParams, _threads: usiz
     let t_idx = trait_column(&traits, &params.select_trait);
     let trait_v: Vec<f64> = (0..tdata.nrows()).map(|j| tdata[(j, t_idx)]).collect();
 
+    let sel_module = if params.select_module.is_empty() {
+        largest_module(&mj.colors)
+    } else {
+        params.select_module.clone()
+    };
     let g = mj.genes.len();
-    let mod_idx: Vec<usize> = (0..g).filter(|&i| mj.colors[i] == params.select_module).collect();
+    let mod_idx: Vec<usize> = (0..g).filter(|&i| mj.colors[i] == sel_module).collect();
     let me = module_eigengene(&exp.data, &mod_idx);
 
     let mut genes = Vec::new();
@@ -549,12 +619,13 @@ fn run_module_detail(job_dir: &Path, params: &ModuleDetailParams, _threads: usiz
         job_dir,
         "step5_detail.json",
         &DetailOutput {
-            module: params.select_module.clone(),
-            trait_name: params.select_trait.clone(),
+            module: sel_module.clone(),
+            trait_name: traits.get(t_idx).cloned().unwrap_or_default(),
             genes,
             gs,
             mm,
             expression,
+            eigengene: me,
         },
     );
     write_progress(job_dir, "module_detail", "done", 1.0, "module detail done");
@@ -568,8 +639,13 @@ fn run_hub(job_dir: &Path, params: &HubParams, _threads: usize) {
     let t_idx = trait_column(&traits, &params.select_trait);
     let trait_v: Vec<f64> = (0..tdata.nrows()).map(|j| tdata[(j, t_idx)]).collect();
 
+    let sel_module = if params.select_module.is_empty() {
+        largest_module(&mj.colors)
+    } else {
+        params.select_module.clone()
+    };
     let g = mj.genes.len();
-    let mod_idx: Vec<usize> = (0..g).filter(|&i| mj.colors[i] == params.select_module).collect();
+    let mod_idx: Vec<usize> = (0..g).filter(|&i| mj.colors[i] == sel_module).collect();
     let me = module_eigengene(&exp.data, &mod_idx);
 
     let mut hub = Vec::new();
@@ -591,8 +667,8 @@ fn run_hub(job_dir: &Path, params: &HubParams, _threads: usize) {
         job_dir,
         "step6_hub.json",
         &HubOutput {
-            module: params.select_module.clone(),
-            trait_name: params.select_trait.clone(),
+            module: sel_module.clone(),
+            trait_name: traits.get(t_idx).cloned().unwrap_or_default(),
             hub_genes: hub,
         },
     );
