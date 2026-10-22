@@ -275,6 +275,9 @@ fn parse_norm(s: &str) -> NormalizeMethod {
     match s {
         "raw" => NormalizeMethod::Raw,
         "log" => NormalizeMethod::Log,
+        "log2p1" => NormalizeMethod::Log2p1,
+        "log10" => NormalizeMethod::Log10,
+        "log2" => NormalizeMethod::Log2,
         _ => NormalizeMethod::Log10p1,
     }
 }

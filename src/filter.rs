@@ -11,10 +11,16 @@ use crate::error::{Result, WgcnaError};
 pub enum NormalizeMethod {
     /// Use the raw values.
     Raw,
-    /// log10(x + 1)
+    /// log10(x + 1) — FPKM/TPM.
     Log10p1,
-    /// log(x) (for metabolomics / proteomics abundance).
+    /// ln(x) — metabolomics / proteomics abundance.
     Log,
+    /// log2(x + 1) — raw count (RNA-seq), basic transform.
+    Log2p1,
+    /// log10(x) — peak area (metabolomics).
+    Log10,
+    /// log2(x) — protein abundance.
+    Log2,
 }
 
 /// R's `median` (average of the two middle values for even length).
@@ -60,6 +66,9 @@ pub fn normalize(expr: &Mat<f64>, method: NormalizeMethod) -> Mat<f64> {
                 NormalizeMethod::Raw => v,
                 NormalizeMethod::Log10p1 => (v + 1.0).log10(),
                 NormalizeMethod::Log => v.ln(),
+                NormalizeMethod::Log2p1 => (v + 1.0).log2(),
+                NormalizeMethod::Log10 => v.log10(),
+                NormalizeMethod::Log2 => v.log2(),
             };
         }
     }

@@ -21,13 +21,25 @@ impl ExpData {
     }
 }
 
-/// Read a tab-delimited expression matrix.
+/// Auto-detect the delimiter (tab vs comma) from the first line of the file.
+/// Supports TSV and CSV input.
+fn detect_delimiter(path: &str) -> Result<u8> {
+    use std::io::BufRead;
+    let f = std::fs::File::open(path)?;
+    let mut first = String::new();
+    std::io::BufReader::new(f).read_line(&mut first)?;
+    let tabs = first.matches('\t').count();
+    let commas = first.matches(',').count();
+    Ok(if commas > tabs { b',' } else { b'\t' })
+}
+
+/// Read a tab/comma-delimited expression matrix.
 ///
-/// Expected layout: first row = header (`ID<TAB>sample1<TAB>sample2...`),
-/// each following row = `gene_id<TAB>v1<TAB>v2...`.
+/// Expected layout: first row = header (`ID<DELIM>sample1<DELIM>sample2...`),
+/// each following row = `gene_id<DELIM>v1<DELIM>v2...`.
 pub fn read_expression(path: &str) -> Result<ExpData> {
     let mut rdr = csv::ReaderBuilder::new()
-        .delimiter(b'\t')
+        .delimiter(detect_delimiter(path)?)
         .has_headers(true)
         .flexible(true)
         .from_path(path)?;
@@ -86,14 +98,14 @@ pub fn read_expression(path: &str) -> Result<ExpData> {
     })
 }
 
-/// Read a tab-delimited trait table.
+/// Read a tab/comma-delimited trait table.
 ///
 /// Expected: first column = sample id, remaining columns = traits
 /// (already one-hot encoded for qualitative traits). Returns (samples, traits, data)
 /// where `data` is samples x traits.
 pub fn read_trait(path: &str) -> Result<(Vec<String>, Vec<String>, Mat<f64>)> {
     let mut rdr = csv::ReaderBuilder::new()
-        .delimiter(b'\t')
+        .delimiter(detect_delimiter(path)?)
         .has_headers(true)
         .flexible(true)
         .from_path(path)?;
