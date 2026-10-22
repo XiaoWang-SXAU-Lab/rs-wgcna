@@ -142,6 +142,22 @@ fn nb_neg_ll(log_alpha: f64, y: &[f64], mu: &[f64]) -> f64 {
     -ll + 0.5 * cr.ln()
 }
 
+/// Raw NB log-likelihood (no Cox-Reid), for the revert check.
+fn raw_nb_ll(alpha: f64, y: &[f64], mu: &[f64]) -> f64 {
+    let r = 1.0 / alpha;
+    let mut ll = 0.0;
+    for j in 0..y.len() {
+        let yj = y[j];
+        let mj = mu[j];
+        if mj <= 0.0 {
+            continue;
+        }
+        ll += ln_gamma(yj + r) - ln_gamma(r) + yj * (alpha * mj).ln()
+            - (yj + r) * (1.0 + alpha * mj).ln();
+    }
+    ll
+}
+
 /// Brent's method: 1-D minimization of a unimodal f on [a, b].
 fn brent_minimize<F: Fn(f64) -> f64>(f: F, a: f64, b: f64, tol: f64) -> f64 {
     let gr = (5.0f64.sqrt() - 1.0) / 2.0;
@@ -220,7 +236,14 @@ fn main() {
     let out_path = args.get(2).map(|s| s.as_str()).unwrap_or("/tmp/vst_test/vst_rust.tsv");
 
     let exp = read_expression(in_path).expect("read counts");
-    let counts = &exp.data;
+    // Ceiling fractional counts (RSEM expected counts) to integers.
+    let mut counts = exp.data.clone();
+    for i in 0..counts.nrows() {
+        for j in 0..counts.ncols() {
+            counts[(i, j)] = counts[(i, j)].ceil();
+        }
+    }
+    let counts = &counts;
     let g = counts.nrows();
     let n = counts.ncols();
 
@@ -244,13 +267,30 @@ fn main() {
         vars[i] = (0..n).map(|j| (q[(i, j)] - m).powi(2)).sum::<f64>() / (n as f64 - 1.0);
     }
 
-    // 4. gene-wise NB dispersion MLE (blind=TRUE, intercept-only fitted mean)
+    // 4. gene-wise NB dispersion MLE + revert (blind=TRUE, intercept-only)
+    let xim: f64 = sf.iter().map(|s| 1.0 / s).sum::<f64>() / n as f64;
+    let min_disp: f64 = 1e-8;
+    let max_disp: f64 = 10.0f64.max(n as f64);
     let mut disps = vec![0.0f64; g];
     for i in 0..g {
         let y: Vec<f64> = (0..n).map(|j| counts[(i, j)]).collect();
         // intercept-only fitted mean: mu_ij = sf_j * rowMeans(counts/sf)
         let mu: Vec<f64> = sf.iter().map(|s| s * means[i]).collect();
-        disps[i] = fit_dispersion(&y, &mu);
+        let m = means[i];
+        let rough = (0..n)
+            .map(|j| ((q[(i, j)] - m).powi(2) - m) / (m * m))
+            .sum::<f64>()
+            / (n as f64 - 1.0);
+        let moments = (vars[i] - xim * m) / (m * m);
+        let alpha_init = rough.min(moments).max(min_disp).min(max_disp);
+        let mle = fit_dispersion(&y, &mu);
+        let ll_init = raw_nb_ll(alpha_init, &y, &mu);
+        let ll_mle = raw_nb_ll(mle, &y, &mu);
+        disps[i] = if ll_mle < ll_init + ll_init.abs() / 1e6 {
+            alpha_init
+        } else {
+            mle
+        };
     }
 
     // 5. parametric fit

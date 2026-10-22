@@ -61,6 +61,22 @@ fn nb_neg_ll(log_alpha: f64, y: &[f64], mu: &[f64]) -> f64 {
     -ll + 0.5 * cr.ln()
 }
 
+/// Raw NB log-likelihood (no Cox-Reid), for the MLE-revert check.
+fn raw_nb_ll(alpha: f64, y: &[f64], mu: &[f64]) -> f64 {
+    let r = 1.0 / alpha;
+    let mut ll = 0.0;
+    for j in 0..y.len() {
+        let yj = y[j];
+        let mj = mu[j];
+        if mj <= 0.0 {
+            continue;
+        }
+        ll += ln_gamma(yj + r) - ln_gamma(r) + yj * (alpha * mj).ln()
+            - (yj + r) * (1.0 + alpha * mj).ln();
+    }
+    ll
+}
+
 fn brent_minimize<F: Fn(f64) -> f64>(f: F, a: f64, b: f64, tol: f64) -> f64 {
     let gr = (5.0f64.sqrt() - 1.0) / 2.0;
     let mut lo = a;
@@ -205,11 +221,19 @@ fn vst_value(q: f64, a0: f64, a1: f64) -> f64 {
 }
 
 /// Variance-stabilizing transform of a raw count matrix (genes × samples).
-/// Returns the vst-transformed matrix.
-pub fn vst_transform(counts: &Mat<f64>) -> Mat<f64> {
+/// Fractional counts (e.g. RSEM expected counts) are ceiling'd to integers
+/// first, since DESeq2 requires integer counts. Returns the vst matrix.
+pub fn vst_transform(raw: &Mat<f64>) -> Mat<f64> {
+    // Ceiling fractional counts to integers (RSEM expected counts).
+    let mut counts = raw.clone();
+    for i in 0..counts.nrows() {
+        for j in 0..counts.ncols() {
+            counts[(i, j)] = counts[(i, j)].ceil();
+        }
+    }
     let g = counts.nrows();
     let n = counts.ncols();
-    let sf = size_factors(counts);
+    let sf = size_factors(&counts);
 
     let mut q = Mat::<f64>::zeros(g, n);
     for i in 0..g {
@@ -219,16 +243,39 @@ pub fn vst_transform(counts: &Mat<f64>) -> Mat<f64> {
     }
 
     let mut means = vec![0.0f64; g];
+    let mut vars = vec![0.0f64; g];
     for i in 0..g {
-        means[i] = (0..n).map(|j| q[(i, j)]).sum::<f64>() / n as f64;
+        let m = (0..n).map(|j| q[(i, j)]).sum::<f64>() / n as f64;
+        means[i] = m;
+        vars[i] = (0..n).map(|j| (q[(i, j)] - m).powi(2)).sum::<f64>() / (n as f64 - 1.0);
     }
 
+    let xim: f64 = sf.iter().map(|s| 1.0 / s).sum::<f64>() / n as f64;
+    let min_disp: f64 = 1e-8;
+    let max_disp: f64 = 10.0f64.max(n as f64);
     let mut disps = vec![0.0f64; g];
     for i in 0..g {
         let y: Vec<f64> = (0..n).map(|j| counts[(i, j)]).collect();
         // intercept-only fitted mean: mu_ij = sf_j * rowMeans(counts/sf)
         let mu: Vec<f64> = sf.iter().map(|s| s * means[i]).collect();
-        disps[i] = fit_dispersion(&y, &mu);
+        // initial estimate: pmin(rough, moments), clamped to [minDisp, maxDisp]
+        let m = means[i];
+        let rough = (0..n)
+            .map(|j| ((q[(i, j)] - m).powi(2) - m) / (m * m))
+            .sum::<f64>()
+            / (n as f64 - 1.0);
+        let moments = (vars[i] - xim * m) / (m * m);
+        let alpha_init = rough.min(moments).max(min_disp).min(max_disp);
+        // Cox-Reid corrected MLE
+        let mle = fit_dispersion(&y, &mu);
+        // revert to initial if MLE did not increase the likelihood (DESeq2)
+        let ll_init = raw_nb_ll(alpha_init, &y, &mu);
+        let ll_mle = raw_nb_ll(mle, &y, &mu);
+        disps[i] = if ll_mle < ll_init + ll_init.abs() / 1e6 {
+            alpha_init
+        } else {
+            mle
+        };
     }
 
     let (a0, a1) = parametric_fit(&means, &disps);
