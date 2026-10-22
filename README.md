@@ -1,3 +1,5 @@
+<p align="center"><img src="rsWGCNA_icon.png" alt="rsWGCNA logo" width="180"></p>
+
 # rs-WGCNA
 
 **A high-performance, zero-configuration reimplementation of the WGCNA computational kernel in pure Rust.**
