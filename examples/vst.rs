@@ -122,11 +122,13 @@ fn vst_value(q: f64, a0: f64, a1: f64) -> f64 {
     (num / (4.0 * a0)).ln() / std::f64::consts::LN_2
 }
 
-/// Negative NB log-likelihood for one gene, as a function of log(dispersion).
+/// Negative NB log-likelihood + Cox-Reid correction (DESeq2 useCR=TRUE).
+/// CR term: -0.5 * log(det(X'WX)), intercept-only -> -0.5 * log(sum mu/(1+alpha*mu)).
 fn nb_neg_ll(log_alpha: f64, y: &[f64], mu: &[f64]) -> f64 {
     let alpha = log_alpha.exp();
     let r = 1.0 / alpha;
     let mut ll = 0.0;
+    let mut cr = 0.0;
     for j in 0..y.len() {
         let yj = y[j];
         let mj = mu[j];
@@ -135,8 +137,9 @@ fn nb_neg_ll(log_alpha: f64, y: &[f64], mu: &[f64]) -> f64 {
         }
         ll += ln_gamma(yj + r) - ln_gamma(r) + yj * (alpha * mj).ln()
             - (yj + r) * (1.0 + alpha * mj).ln();
+        cr += mj / (1.0 + alpha * mj);
     }
-    -ll
+    -ll + 0.5 * cr.ln()
 }
 
 /// Brent's method: 1-D minimization of a unimodal f on [a, b].
@@ -242,18 +245,26 @@ fn main() {
     }
 
     // 4. gene-wise NB dispersion MLE (blind=TRUE, intercept-only fitted mean)
-    let sf_sum: f64 = sf.iter().sum();
     let mut disps = vec![0.0f64; g];
     for i in 0..g {
         let y: Vec<f64> = (0..n).map(|j| counts[(i, j)]).collect();
-        // intercept-only fitted mean: mu_ij = sf_j * (sum y / sum sf)
-        let beta = y.iter().sum::<f64>() / sf_sum;
-        let mu: Vec<f64> = sf.iter().map(|s| s * beta).collect();
+        // intercept-only fitted mean: mu_ij = sf_j * rowMeans(counts/sf)
+        let mu: Vec<f64> = sf.iter().map(|s| s * means[i]).collect();
         disps[i] = fit_dispersion(&y, &mu);
     }
 
     // 5. parametric fit
     let (a0, a1) = parametric_fit(&means, &disps);
+
+    // debug dump: gene-wise dispersions
+    if let Ok(third) = std::env::var("VST_DUMP_DISP") {
+        use std::io::Write;
+        let mut df = std::fs::File::create(&third).unwrap();
+        writeln!(df, "gene\tdisp\tbaseMean").unwrap();
+        for i in 0..g {
+            writeln!(df, "{}\t{:.10}\t{:.6}", exp.genes[i], disps[i], means[i]).unwrap();
+        }
+    }
 
     // 6. vst
     let mut out = Mat::<f64>::zeros(g, n);

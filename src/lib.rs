@@ -25,6 +25,7 @@ pub mod pipeline;
 pub mod sft;
 pub mod stats;
 pub mod tom;
+pub mod vst;
 
 pub use error::{Result, WgcnaError};
 pub use network::{NetworkType, TomDenom, TomType};

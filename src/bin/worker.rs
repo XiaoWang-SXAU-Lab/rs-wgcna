@@ -345,7 +345,12 @@ fn run_filter(job_dir: &Path, params: &FilterParams) {
         exp.samples = samples;
     }
 
-    let norm = normalize(&exp.data, parse_norm(&params.normalize_method));
+    // vst（DESeq2 方差稳定变换，纯 Rust）用于 raw count；其余用元素级归一化。
+    let norm = if params.normalize_method == "vst" {
+        rs_wgcna::vst::vst_transform(&exp.data)
+    } else {
+        normalize(&exp.data, parse_norm(&params.normalize_method))
+    };
 
     write_progress(job_dir, "filter", "running", 0.4, "filtering low-expression genes...");
     let keep: Vec<bool> = if params.sample_percentage > 0.0 {
