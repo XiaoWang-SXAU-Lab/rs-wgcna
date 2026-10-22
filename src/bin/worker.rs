@@ -162,6 +162,7 @@ impl Default for HubParams {
 #[derive(Serialize)]
 struct SftOutput {
     power_estimate: Option<f64>,
+    power_source: String, // "estimate"（R² 达标）| "experience"（经验兜底）
     network_type: String,
     fit_indices: Vec<FitIndex>,
 }
@@ -425,6 +426,21 @@ fn run_filter(job_dir: &Path, params: &FilterParams) {
     );
 }
 
+/// WGCNA FAQ 经验 power 值：R² 未达标（powerEstimate 为 NA）时兜底。
+/// 样本数越少，经验 power 越大（相关性估计噪声更大，需更强幂次）。
+fn experience_power(n_samples: usize, nt: NetworkType) -> f64 {
+    let signed = matches!(nt, NetworkType::Signed | NetworkType::SignedHybrid);
+    if n_samples < 20 {
+        if signed { 18.0 } else { 9.0 }
+    } else if n_samples < 30 {
+        if signed { 16.0 } else { 8.0 }
+    } else if n_samples < 40 {
+        if signed { 14.0 } else { 7.0 }
+    } else {
+        if signed { 12.0 } else { 6.0 }
+    }
+}
+
 fn run_soft_threshold(job_dir: &Path, params: &SoftThresholdParams, threads: usize) {
     write_progress(job_dir, "soft_threshold", "running", 0.2, "computing correlation...");
     let exp = read_filtered(job_dir);
@@ -438,6 +454,16 @@ fn run_soft_threshold(job_dir: &Path, params: &SoftThresholdParams, threads: usi
         .collect();
     let (power_estimate, rows) =
         pick_soft_threshold(&cor, nt, &power_vector, params.rsquared_cut, 10, false);
+
+    // R² 未达标时，用 WGCNA FAQ 经验 power 兜底（同步自 Shiny app 的 getpower 逻辑）。
+    let n_samples = exp.data.ncols();
+    let (power_estimate, power_source) = match power_estimate {
+        Some(p) => (Some(p), "estimate".to_string()),
+        None => {
+            let ep = experience_power(n_samples, nt);
+            (Some(ep), "experience".to_string())
+        }
+    };
 
     let fit_indices = rows
         .iter()
@@ -454,6 +480,7 @@ fn run_soft_threshold(job_dir: &Path, params: &SoftThresholdParams, threads: usi
 
     let out = SftOutput {
         power_estimate,
+        power_source,
         network_type: params.network_type.clone(),
         fit_indices,
     };
