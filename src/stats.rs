@@ -88,7 +88,7 @@ fn betai(a: f64, b: f64, x: f64) -> f64 {
 }
 
 /// Log-gamma via Lanczos approximation.
-fn ln_gamma(x: f64) -> f64 {
+pub fn ln_gamma(x: f64) -> f64 {
     if x < 0.5 {
         // reflection formula
         return (std::f64::consts::PI / (std::f64::consts::PI * x).sin()).ln()
