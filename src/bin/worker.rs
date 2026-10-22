@@ -20,11 +20,13 @@ use rs_wgcna::filter::{
 };
 use rs_wgcna::hclust::{hclust_average, HClust};
 use rs_wgcna::io::{read_expression, read_trait, write_expression};
+use rs_wgcna::kme::kme;
 use rs_wgcna::module_trait::module_trait_cor;
 use rs_wgcna::network::{NetworkType, TomDenom, TomType};
 use rs_wgcna::pipeline::blockwise_modules_with_tree;
 use rs_wgcna::sft::{pick_soft_threshold, scale_free_check};
 use rs_wgcna::stats::pearson_vec;
+use rs_wgcna::tom::tom_from_cor;
 
 // ---------------------------------------------------------------------------
 // Parameters (read from <job-dir>/params.json)
@@ -141,6 +143,7 @@ struct HubParams {
     kme_cutoff: f64,
     gs_cutoff: f64,
     weight_threshold: f64,
+    power: f64,
 }
 
 impl Default for HubParams {
@@ -151,6 +154,7 @@ impl Default for HubParams {
             kme_cutoff: 0.8,
             gs_cutoff: 0.5,
             weight_threshold: 0.02,
+            power: 6.0,
         }
     }
 }
@@ -232,6 +236,8 @@ struct MtaitOutput {
     cor: Vec<Vec<f64>>,
     p: Vec<Vec<f64>>,
     eigengenes: Vec<Vec<f64>>,
+    genes: Vec<String>,
+    kme: Vec<Vec<f64>>,
 }
 
 #[derive(Serialize)]
@@ -243,6 +249,7 @@ struct DetailOutput {
     mm: Vec<f64>,
     expression: Vec<Vec<f64>>,
     eigengene: Vec<f64>,
+    samples: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -253,10 +260,30 @@ struct HubGene {
 }
 
 #[derive(Serialize)]
+struct NetNode {
+    id: String,
+    color: String,
+}
+
+#[derive(Serialize)]
+struct NetEdge {
+    source: String,
+    target: String,
+    weight: f64,
+}
+
+#[derive(Serialize)]
+struct NetworkOutput {
+    nodes: Vec<NetNode>,
+    edges: Vec<NetEdge>,
+}
+
+#[derive(Serialize)]
 struct HubOutput {
     module: String,
     trait_name: String,
     hub_genes: Vec<HubGene>,
+    network: NetworkOutput,
 }
 
 // ---------------------------------------------------------------------------
@@ -634,6 +661,10 @@ fn run_module_trait(job_dir: &Path, _params: &ModuleTraitParams, _threads: usize
     let me_v: Vec<Vec<f64>> = (0..mes.nrows())
         .map(|i| (0..mes.ncols()).map(|j| mes[(i, j)]).collect())
         .collect();
+    let kme_mat = kme(&exp.data, &mes);
+    let kme_v: Vec<Vec<f64>> = (0..kme_mat.nrows())
+        .map(|i| (0..kme_mat.ncols()).map(|j| kme_mat[(i, j)]).collect())
+        .collect();
 
     write_json(
         job_dir,
@@ -644,6 +675,8 @@ fn run_module_trait(job_dir: &Path, _params: &ModuleTraitParams, _threads: usize
             cor: cor_v,
             p: p_v,
             eigengenes: me_v,
+            genes: mj.genes.clone(),
+            kme: kme_v,
         },
     );
     write_progress(job_dir, "module_trait", "done", 1.0, "module-trait done");
@@ -689,12 +722,13 @@ fn run_module_detail(job_dir: &Path, params: &ModuleDetailParams, _threads: usiz
             mm,
             expression,
             eigengene: me,
+            samples: exp.samples.clone(),
         },
     );
     write_progress(job_dir, "module_detail", "done", 1.0, "module detail done");
 }
 
-fn run_hub(job_dir: &Path, params: &HubParams, _threads: usize) {
+fn run_hub(job_dir: &Path, params: &HubParams, threads: usize) {
     let exp = read_filtered(job_dir);
     let mj = read_modules(job_dir);
     let (_s, traits, tdata) =
@@ -726,6 +760,51 @@ fn run_hub(job_dir: &Path, params: &HubParams, _threads: usize) {
     }
     hub.sort_by(|a, b| b.kme.partial_cmp(&a.kme).unwrap());
 
+    // --- network visualization: top genes by kME, TOM edges above threshold ---
+    const MAX_NET_GENES: usize = 200;
+    let mut scored: Vec<(usize, f64)> = mod_idx
+        .iter()
+        .map(|&gi| {
+            let gene: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(gi, j)]).collect();
+            let kme = pearson_vec(&gene, &me).abs();
+            (gi, kme)
+        })
+        .collect();
+    scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+    let net_genes: Vec<usize> = scored.iter().take(MAX_NET_GENES).map(|&(gi, _)| gi).collect();
+    let ng = net_genes.len();
+
+    let mut cor = Mat::<f64>::zeros(ng, ng);
+    for a in 0..ng {
+        let ga: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(net_genes[a], j)]).collect();
+        for b in (a + 1)..ng {
+            let gb: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(net_genes[b], j)]).collect();
+            let c = pearson_vec(&ga, &gb);
+            cor[(a, b)] = c;
+            cor[(b, a)] = c;
+        }
+        cor[(a, a)] = 1.0;
+    }
+    let tom = tom_from_cor(&cor, params.power, NetworkType::Unsigned, TomType::Unsigned, TomDenom::Min, threads);
+
+    let mut nodes = Vec::new();
+    for &gi in &net_genes {
+        nodes.push(NetNode { id: mj.genes[gi].clone(), color: mj.colors[gi].clone() });
+    }
+    let mut edges = Vec::new();
+    for a in 0..ng {
+        for b in (a + 1)..ng {
+            let w = tom[(a, b)];
+            if w > params.weight_threshold {
+                edges.push(NetEdge {
+                    source: mj.genes[net_genes[a]].clone(),
+                    target: mj.genes[net_genes[b]].clone(),
+                    weight: w,
+                });
+            }
+        }
+    }
+
     write_json(
         job_dir,
         "step6_hub.json",
@@ -733,6 +812,7 @@ fn run_hub(job_dir: &Path, params: &HubParams, _threads: usize) {
             module: sel_module.clone(),
             trait_name: traits.get(t_idx).cloned().unwrap_or_default(),
             hub_genes: hub,
+            network: NetworkOutput { nodes, edges },
         },
     );
     write_progress(job_dir, "hub", "done", 1.0, "hub genes done");
