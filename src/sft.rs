@@ -96,6 +96,141 @@ pub fn scale_free_fit_index(k: &[f64], n_breaks: usize, remove_first: bool) -> (
     (r2, slope, adj_r2)
 }
 
+/// Scale-free topology check for one power (port of WGCNA::scaleFreePlot,
+/// used by the old Shiny `powertest`): connectivity histogram + log-log
+/// regression with intercept, slope, and adjusted R².
+#[derive(Debug, Clone)]
+pub struct ScaleFreeCheck {
+    pub hist_mids: Vec<f64>,
+    pub hist_counts: Vec<f64>,
+    pub log_k: Vec<f64>,
+    pub log_p: Vec<f64>,
+    pub intercept: f64,
+    pub slope: f64,
+    pub adj_r2: f64,
+}
+
+/// Connectivity histogram (R `hist` semantics, default 30 bins).
+fn histogram_bins(k: &[f64], bins: usize) -> (Vec<f64>, Vec<f64>) {
+    let min_k = k.iter().cloned().fold(f64::INFINITY, f64::min);
+    let max_k = k.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+    let span = max_k - min_k;
+    let step = span / bins as f64;
+    let mut counts = vec![0usize; bins];
+    for &v in k {
+        let mut idx = ((v - min_k) / step).floor() as isize;
+        if idx < 0 {
+            idx = 0;
+        }
+        if idx >= bins as isize {
+            idx = bins as isize - 1;
+        }
+        counts[idx as usize] += 1;
+    }
+    let mids: Vec<f64> = (0..bins)
+        .map(|i| min_k + (i as f64 + 0.5) * step)
+        .collect();
+    (mids, counts.into_iter().map(|c| c as f64).collect())
+}
+
+/// Log-log regression data: log10(mean k per bin) vs log10(proportion per bin),
+/// with intercept, slope, and adjusted R² (mirrors ggscaleFreePlot).
+fn loglog(k: &[f64], n_breaks: usize, remove_first: bool) -> (Vec<f64>, Vec<f64>, f64, f64, f64) {
+    let n = k.len();
+    let mut min_k = f64::INFINITY;
+    let mut max_k = f64::NEG_INFINITY;
+    for &v in k {
+        if v < min_k {
+            min_k = v;
+        }
+        if v > max_k {
+            max_k = v;
+        }
+    }
+    let dx = max_k - min_k;
+    let cut_lo = min_k - dx / 1000.0;
+    let cut_hi = max_k + dx / 1000.0;
+    let step = dx / (n_breaks as f64);
+    let mut cut_breaks = vec![0.0f64; n_breaks + 1];
+    cut_breaks[0] = cut_lo;
+    for i in 1..n_breaks {
+        cut_breaks[i] = min_k + (i as f64) * step;
+    }
+    cut_breaks[n_breaks] = cut_hi;
+
+    let mut sum = vec![0.0f64; n_breaks];
+    let mut cnt = vec![0usize; n_breaks];
+    for &v in k {
+        let mut idx = cut_breaks.partition_point(|&b| b < v) as isize - 1;
+        if idx < 0 {
+            idx = 0;
+        }
+        if idx >= n_breaks as isize {
+            idx = n_breaks as isize - 1;
+        }
+        let i = idx as usize;
+        sum[i] += v;
+        cnt[i] += 1;
+    }
+
+    let hist_step = dx / (n_breaks as f64);
+    let mut dk = vec![0.0f64; n_breaks];
+    let mut p_dk = vec![0.0f64; n_breaks];
+    for i in 0..n_breaks {
+        dk[i] = if cnt[i] == 0 {
+            min_k + (i as f64 + 0.5) * hist_step
+        } else {
+            sum[i] / cnt[i] as f64
+        };
+        p_dk[i] = cnt[i] as f64 / n as f64;
+    }
+
+    let mut log_dk: Vec<f64> = dk.iter().map(|&d| d.log10()).collect();
+    let mut log_p_dk: Vec<f64> = p_dk.iter().map(|&p| (p + 1e-9).log10()).collect();
+
+    if remove_first {
+        log_dk.remove(0);
+        log_p_dk.remove(0);
+    }
+
+    let (slope, r2) = simple_lm(&log_dk, &log_p_dk);
+    let mx = log_dk.iter().sum::<f64>() / log_dk.len() as f64;
+    let my = log_p_dk.iter().sum::<f64>() / log_p_dk.len() as f64;
+    let intercept = my - slope * mx;
+    let m = log_dk.len() as f64;
+    let adj_r2 = if r2.is_nan() || m <= 2.0 {
+        r2
+    } else {
+        1.0 - (1.0 - r2) * (m - 1.0) / (m - 2.0)
+    };
+
+    (log_dk, log_p_dk, intercept, slope, adj_r2)
+}
+
+/// Scale-free topology check for one power (port of WGCNA::scaleFreePlot /
+/// the old Shiny powertest).
+pub fn scale_free_check(
+    cor: &Mat<f64>,
+    power: f64,
+    network_type: NetworkType,
+    n_breaks: usize,
+    remove_first: bool,
+) -> ScaleFreeCheck {
+    let a = adjacency(cor, power, network_type);
+    let k = connectivity(&a);
+    let (hist_mids, hist_counts) = histogram_bins(&k, 30);
+    let (log_k, log_p, intercept, slope, adj_r2) = loglog(&k, n_breaks, remove_first);
+    ScaleFreeCheck {
+        hist_mids,
+        hist_counts,
+        log_k,
+        log_p,
+        intercept,
+        slope,
+        adj_r2,
+    }
+}
+
 /// Simple linear regression y ~ x: returns (slope, R-squared).
 fn simple_lm(x: &[f64], y: &[f64]) -> (f64, f64) {
     let n = x.len();

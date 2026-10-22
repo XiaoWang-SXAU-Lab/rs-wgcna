@@ -23,7 +23,7 @@ use rs_wgcna::io::{read_expression, read_trait, write_expression};
 use rs_wgcna::module_trait::module_trait_cor;
 use rs_wgcna::network::{NetworkType, TomDenom, TomType};
 use rs_wgcna::pipeline::blockwise_modules_with_tree;
-use rs_wgcna::sft::pick_soft_threshold;
+use rs_wgcna::sft::{pick_soft_threshold, scale_free_check};
 use rs_wgcna::stats::pearson_vec;
 
 // ---------------------------------------------------------------------------
@@ -165,6 +165,19 @@ struct SftOutput {
     power_source: String, // "estimate"（R² 达标）| "experience"（经验兜底）
     network_type: String,
     fit_indices: Vec<FitIndex>,
+    scale_free_check: ScaleFreeCheckOutput,
+}
+
+#[derive(Serialize)]
+struct ScaleFreeCheckOutput {
+    power: f64,
+    hist_mids: Vec<f64>,
+    hist_counts: Vec<f64>,
+    log_k: Vec<f64>,
+    log_p: Vec<f64>,
+    intercept: f64,
+    slope: f64,
+    adj_r2: f64,
 }
 
 #[derive(Serialize)]
@@ -486,11 +499,26 @@ fn run_soft_threshold(job_dir: &Path, params: &SoftThresholdParams, threads: usi
         })
         .collect();
 
+    // Scale-free topology check for the selected power (connectivity histogram
+    // + log-log regression), mirroring the old Shiny powertest.
+    let selected_power = power_estimate.expect("power estimate");
+    let sfc = scale_free_check(&cor, selected_power, nt, 10, false);
+
     let out = SftOutput {
         power_estimate,
         power_source,
         network_type: params.network_type.clone(),
         fit_indices,
+        scale_free_check: ScaleFreeCheckOutput {
+            power: selected_power,
+            hist_mids: sfc.hist_mids,
+            hist_counts: sfc.hist_counts,
+            log_k: sfc.log_k,
+            log_p: sfc.log_p,
+            intercept: sfc.intercept,
+            slope: sfc.slope,
+            adj_r2: sfc.adj_r2,
+        },
     };
     let s = serde_json::to_string_pretty(&out).unwrap();
     std::fs::write(job_dir.join("step2_sft.json"), s).expect("write step2_sft.json");
