@@ -214,8 +214,11 @@ pub fn pick_soft_threshold(
         let k = connectivity(&a);
         let (r2, slope, trunc_r2) = scale_free_fit_index(&k, n_breaks, remove_first);
         let mean_k = k.iter().sum::<f64>() / k.len() as f64;
-        let mut ks = k.clone();
-        ks.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        let mut ks: Vec<f64> = k.iter().copied().filter(|v| v.is_finite()).collect();
+        if ks.is_empty() {
+            ks = k.clone();
+        }
+        ks.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         let median_k = if ks.len() % 2 == 0 {
             (ks[ks.len() / 2 - 1] + ks[ks.len() / 2]) / 2.0
         } else {

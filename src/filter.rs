@@ -102,6 +102,8 @@ pub fn top_genes_by(expr: &Mat<f64>, n_keep: usize, method: FilterMethod) -> Vec
             };
             (s, i)
         })
+        // 排除零方差（常数）基因：其相关性为 NaN，会导致下游 panic。
+        .filter(|(s, _)| s.is_finite() && *s > 0.0)
         .collect();
     // sort by score descending; tie -> lower index first
     scores.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap().then(a.1.cmp(&b.1)));
