@@ -21,16 +21,17 @@ enum AdjType {
 
 #[inline]
 fn adj_transform(c: f64, power: f64, t: AdjType) -> f64 {
+    let p = power as i32;
     match t {
-        AdjType::Unsigned => c.abs().powf(power),
+        AdjType::Unsigned => c.abs().powi(p),
         AdjType::UnsignedKeepSign => {
             let s = if c < 0.0 { -1.0 } else { 1.0 };
-            s * c.abs().powf(power)
+            s * c.abs().powi(p)
         }
-        AdjType::Signed => ((1.0 + c) / 2.0).powf(power),
+        AdjType::Signed => ((1.0 + c) / 2.0).powi(p),
         AdjType::Hybrid => {
             if c > 0.0 {
-                c.powf(power)
+                c.powi(p)
             } else {
                 0.0
             }
