@@ -3,7 +3,7 @@
 All notable changes to rs-WGCNA are documented in this file. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.2.0] — 2026-10-23
 
 ### Added
 
@@ -16,6 +16,9 @@ on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   ceiling'd to integers first).
 - CSV input: delimiter auto-detection (tab vs comma) in `io`.
 - Extra normalization methods: `log2(x+1)`, `log10(x)`, `log2(x)`.
+- Excel workbook input (xlsx/xls/xlsb/ods) via `calamine` (magic-byte sniffing).
+- Hub-gene network: hub-and-spoke extraction (hub genes + neighbors, per-hub
+  top-N) with per-node kME/GS/degree metrics.
 
 ### Changed
 

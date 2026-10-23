@@ -144,6 +144,8 @@ struct HubParams {
     gs_cutoff: f64,
     weight_threshold: f64,
     power: f64,
+    top_n_neighbors: usize,
+    max_hubs: usize,
 }
 
 impl Default for HubParams {
@@ -155,6 +157,8 @@ impl Default for HubParams {
             gs_cutoff: 0.5,
             weight_threshold: 0.02,
             power: 6.0,
+            top_n_neighbors: 20,
+            max_hubs: 30,
         }
     }
 }
@@ -263,6 +267,9 @@ struct HubGene {
 struct NetNode {
     id: String,
     color: String,
+    kme: f64,
+    gs: f64,
+    degree: usize,
 }
 
 #[derive(Serialize)]
@@ -760,25 +767,52 @@ fn run_hub(job_dir: &Path, params: &HubParams, threads: usize) {
     }
     hub.sort_by(|a, b| b.kme.partial_cmp(&a.kme).unwrap());
 
-    // --- network visualization: top genes by kME, TOM edges above threshold ---
-    const MAX_NET_GENES: usize = 200;
-    let mut scored: Vec<(usize, f64)> = mod_idx
+    // --- network visualization: hub genes (kME > cutoff) + their neighbors ---
+    use std::collections::{HashMap, HashSet};
+
+    // 1. score all module genes by kME + gs
+    let mut scored: Vec<(usize, f64, f64)> = mod_idx
         .iter()
         .map(|&gi| {
             let gene: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(gi, j)]).collect();
             let kme = pearson_vec(&gene, &me).abs();
-            (gi, kme)
+            let gs = pearson_vec(&gene, &trait_v).abs();
+            (gi, kme, gs)
         })
         .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-    let net_genes: Vec<usize> = scored.iter().take(MAX_NET_GENES).map(|&(gi, _)| gi).collect();
-    let ng = net_genes.len();
+    let metric: HashMap<usize, (f64, f64)> = scored.iter().map(|&(gi, k, g)| (gi, (k, g))).collect();
 
+    // 2. hub genes = kME > cutoff, limited to max_hubs
+    let hub_genes: Vec<usize> = scored
+        .iter()
+        .filter(|&&(_, k, _)| k > params.kme_cutoff)
+        .take(params.max_hubs)
+        .map(|&(gi, _, _)| gi)
+        .collect();
+
+    // 3. candidates = hubs + top pool by kME (for TOM computation)
+    const CANDIDATE_POOL: usize = 400;
+    let mut candidate: Vec<usize> = hub_genes.clone();
+    let mut seen: HashSet<usize> = hub_genes.iter().copied().collect();
+    for &(gi, _, _) in &scored {
+        if candidate.len() >= CANDIDATE_POOL {
+            break;
+        }
+        if seen.insert(gi) {
+            candidate.push(gi);
+        }
+    }
+    let ng = candidate.len();
+    let gene_to_idx: HashMap<usize, usize> = candidate.iter().enumerate().map(|(i, &gi)| (gi, i)).collect();
+    let hub_pos: HashSet<usize> = hub_genes.iter().map(|&gi| gene_to_idx[&gi]).collect();
+
+    // 4. TOM over candidates
     let mut cor = Mat::<f64>::zeros(ng, ng);
     for a in 0..ng {
-        let ga: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(net_genes[a], j)]).collect();
+        let ga: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(candidate[a], j)]).collect();
         for b in (a + 1)..ng {
-            let gb: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(net_genes[b], j)]).collect();
+            let gb: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(candidate[b], j)]).collect();
             let c = pearson_vec(&ga, &gb);
             cor[(a, b)] = c;
             cor[(b, a)] = c;
@@ -787,22 +821,52 @@ fn run_hub(job_dir: &Path, params: &HubParams, threads: usize) {
     }
     let tom = tom_from_cor(&cor, params.power, NetworkType::Unsigned, TomType::Unsigned, TomDenom::Min, threads);
 
-    let mut nodes = Vec::new();
-    for &gi in &net_genes {
-        nodes.push(NetNode { id: mj.genes[gi].clone(), color: mj.colors[gi].clone() });
-    }
-    let mut edges = Vec::new();
-    for a in 0..ng {
-        for b in (a + 1)..ng {
-            let w = tom[(a, b)];
+    // 5. per-hub top-N neighbors (by weight, above threshold)
+    let mut kept: HashSet<(usize, usize)> = HashSet::new();
+    for &h in &hub_pos {
+        let mut nb: Vec<(usize, f64)> = Vec::new();
+        for b in 0..ng {
+            if b == h {
+                continue;
+            }
+            let w = tom[(h, b)];
             if w > params.weight_threshold {
-                edges.push(NetEdge {
-                    source: mj.genes[net_genes[a]].clone(),
-                    target: mj.genes[net_genes[b]].clone(),
-                    weight: w,
-                });
+                nb.push((b, w));
             }
         }
+        nb.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        for &(b, _) in nb.iter().take(params.top_n_neighbors) {
+            kept.insert(if h < b { (h, b) } else { (b, h) });
+        }
+    }
+
+    // 6. nodes (hubs + neighbors) + edges + degree
+    let mut node_set: HashSet<usize> = hub_pos.clone();
+    let mut edges: Vec<NetEdge> = Vec::new();
+    let mut degree: HashMap<usize, usize> = HashMap::new();
+    for &(a, b) in &kept {
+        node_set.insert(a);
+        node_set.insert(b);
+        *degree.entry(a).or_insert(0) += 1;
+        *degree.entry(b).or_insert(0) += 1;
+        edges.push(NetEdge {
+            source: mj.genes[candidate[a]].clone(),
+            target: mj.genes[candidate[b]].clone(),
+            weight: tom[(a, b)],
+        });
+    }
+
+    let mut nodes: Vec<NetNode> = Vec::new();
+    for &idx in &node_set {
+        let gi = candidate[idx];
+        let (k, g) = metric.get(&gi).copied().unwrap_or((0.0, 0.0));
+        nodes.push(NetNode {
+            id: mj.genes[gi].clone(),
+            color: mj.colors[gi].clone(),
+            kme: k,
+            gs: g,
+            degree: degree.get(&idx).copied().unwrap_or(0),
+        });
     }
 
     write_json(
