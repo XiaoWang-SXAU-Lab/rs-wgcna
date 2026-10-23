@@ -358,8 +358,6 @@ pub fn pick_soft_threshold(
 ) -> (Option<f64>, Vec<[f64; 7]>) {
     let mut rows = Vec::with_capacity(power_vector.len());
     let mut power_estimate = None;
-    let mut crossed = false;
-    let mut after_cross = 0;
     for &power in power_vector {
         let a = adjacency(cor, power, network_type);
         let k = connectivity(&a);
@@ -376,18 +374,12 @@ pub fn pick_soft_threshold(
             ks[ks.len() / 2]
         };
         let max_k = ks[ks.len() - 1];
-        if power_estimate.is_none() && r2 > rsquared_cut {
+        // 需要同时满足 R² 达标且斜率为负（真正的无标度网络 log-log 斜率为负），
+        // 避免低 power 时因网络过密出现的 R² 虚高/正斜率伪达标。
+        if power_estimate.is_none() && r2 > rsquared_cut && slope < 0.0 {
             power_estimate = Some(power);
-            crossed = true;
         }
         rows.push([power, r2, slope, trunc_r2, mean_k, median_k, max_k]);
-        // 首次超过阈值后再多算 2 个 power 就提前停止（无需扫满全部 β）。
-        if crossed {
-            after_cross += 1;
-            if after_cross >= 3 {
-                break;
-            }
-        }
     }
     (power_estimate, rows)
 }

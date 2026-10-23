@@ -154,7 +154,7 @@ impl Default for HubParams {
             select_module: String::new(),
             select_trait: String::new(),
             kme_cutoff: 0.8,
-            gs_cutoff: 0.5,
+            gs_cutoff: 0.0,
             weight_threshold: 0.02,
             power: 6.0,
             top_n_neighbors: 20,
@@ -270,6 +270,7 @@ struct NetNode {
     kme: f64,
     gs: f64,
     degree: usize,
+    is_hub: bool,
 }
 
 #[derive(Serialize)]
@@ -351,18 +352,6 @@ fn parse_tom_denom(s: &str) -> TomDenom {
 fn read_filtered(job_dir: &Path) -> rs_wgcna::io::ExpData {
     let p = job_dir.join("step1_filtered.tsv");
     read_expression(p.to_str().unwrap()).expect("read step1_filtered.tsv")
-}
-
-fn read_power(job_dir: &Path, params: &NetworkParams) -> f64 {
-    // Prefer the power recorded in step2_sft.json if present.
-    if let Ok(s) = std::fs::read_to_string(job_dir.join("step2_sft.json")) {
-        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&s) {
-            if let Some(p) = v.get("power_estimate").and_then(|x| x.as_f64()) {
-                return p;
-            }
-        }
-    }
-    params.power
 }
 
 // ---------------------------------------------------------------------------
@@ -503,10 +492,8 @@ fn run_soft_threshold(job_dir: &Path, params: &SoftThresholdParams, threads: usi
     let cor = pearson(&exp.data, threads).expect("correlation");
 
     write_progress(job_dir, "soft_threshold", "running", 0.7, "scanning powers...");
-    let power_vector: Vec<f64> = (1..=10)
-        .map(|p| p as f64)
-        .chain((12..=20).step_by(2).map(|p| p as f64))
-        .collect();
+    // 扫满 1..=20 全部 power，不提前停止。
+    let power_vector: Vec<f64> = (1..=20).map(|p| p as f64).collect();
     let (power_estimate, rows) =
         pick_soft_threshold(&cor, nt, &power_vector, params.rsquared_cut, 10, false);
 
@@ -566,7 +553,7 @@ fn run_network(job_dir: &Path, params: &NetworkParams, threads: usize) {
     let nt = parse_network_type(&params.network_type);
     let tom_type = parse_tom_type(&params.tom_type);
     let tom_denom = parse_tom_denom(&params.tom_denom);
-    let power = read_power(job_dir, params);
+    let power = params.power;
 
     write_progress(job_dir, "network", "running", 0.6, "clustering & cutting modules...");
     let (colors, tree) = blockwise_modules_with_tree(
@@ -735,7 +722,7 @@ fn run_module_detail(job_dir: &Path, params: &ModuleDetailParams, _threads: usiz
     write_progress(job_dir, "module_detail", "done", 1.0, "module detail done");
 }
 
-fn run_hub(job_dir: &Path, params: &HubParams, threads: usize) {
+fn run_hub(job_dir: &Path, params: &HubParams, net_params: &NetworkParams, threads: usize) {
     let exp = read_filtered(job_dir);
     let mj = read_modules(job_dir);
     let (_s, traits, tdata) =
@@ -752,25 +739,10 @@ fn run_hub(job_dir: &Path, params: &HubParams, threads: usize) {
     let mod_idx: Vec<usize> = (0..g).filter(|&i| mj.colors[i] == sel_module).collect();
     let me = module_eigengene(&exp.data, &mod_idx);
 
-    let mut hub = Vec::new();
-    for &gi in &mod_idx {
-        let gene: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(gi, j)]).collect();
-        let kme = pearson_vec(&gene, &me).abs();
-        let gs = pearson_vec(&gene, &trait_v).abs();
-        if kme > params.kme_cutoff && gs > params.gs_cutoff {
-            hub.push(HubGene {
-                gene: mj.genes[gi].clone(),
-                kme,
-                gs,
-            });
-        }
-    }
-    hub.sort_by(|a, b| b.kme.partial_cmp(&a.kme).unwrap());
-
-    // --- network visualization: hub genes (kME > cutoff) + their neighbors ---
     use std::collections::{HashMap, HashSet};
 
-    // 1. score all module genes by kME + gs
+    // Score every module gene by kME + GS once, then reuse for the table, the
+    // hub seeds, and the candidate pool.
     let mut scored: Vec<(usize, f64, f64)> = mod_idx
         .iter()
         .map(|&gi| {
@@ -782,6 +754,20 @@ fn run_hub(job_dir: &Path, params: &HubParams, threads: usize) {
         .collect();
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
     let metric: HashMap<usize, (f64, f64)> = scored.iter().map(|&(gi, k, g)| (gi, (k, g))).collect();
+
+    // Hub gene table: |kME| > cutoff AND |GS| > cutoff, sorted by kME (desc).
+    let mut hub = Vec::new();
+    for &(gi, k, g) in &scored {
+        if k > params.kme_cutoff && g > params.gs_cutoff {
+            hub.push(HubGene {
+                gene: mj.genes[gi].clone(),
+                kme: k,
+                gs: g,
+            });
+        }
+    }
+
+    // --- network visualization: hub genes (kME > cutoff) + their neighbors ---
 
     // 2. hub genes = kME > cutoff, limited to max_hubs
     let hub_genes: Vec<usize> = scored
@@ -819,7 +805,14 @@ fn run_hub(job_dir: &Path, params: &HubParams, threads: usize) {
         }
         cor[(a, a)] = 1.0;
     }
-    let tom = tom_from_cor(&cor, params.power, NetworkType::Unsigned, TomType::Unsigned, TomDenom::Min, threads);
+    let tom = tom_from_cor(
+        &cor,
+        params.power,
+        parse_network_type(&net_params.network_type),
+        parse_tom_type(&net_params.tom_type),
+        parse_tom_denom(&net_params.tom_denom),
+        threads,
+    );
 
     // 5. per-hub top-N neighbors (by weight, above threshold)
     let mut kept: HashSet<(usize, usize)> = HashSet::new();
@@ -866,6 +859,7 @@ fn run_hub(job_dir: &Path, params: &HubParams, threads: usize) {
             kme: k,
             gs: g,
             degree: degree.get(&idx).copied().unwrap_or(0),
+            is_hub: hub_pos.contains(&idx),
         });
     }
 
@@ -929,7 +923,7 @@ fn main() {
         "network" => run_network(&job_dir, &params.network, threads),
         "module_trait" => run_module_trait(&job_dir, &params.module_trait, threads),
         "module_detail" => run_module_detail(&job_dir, &params.module_detail, threads),
-        "hub" => run_hub(&job_dir, &params.hub, threads),
+        "hub" => run_hub(&job_dir, &params.hub, &params.network, threads),
         other => {
             eprintln!("unknown step: {other}");
             std::process::exit(2);

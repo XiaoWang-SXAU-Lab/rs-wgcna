@@ -5,6 +5,7 @@
 //! MLE → parametric Gamma-GLM fit (dispersion = a0 + a1/mean) → vst formula.
 
 use faer::Mat;
+use rayon::prelude::*;
 
 use crate::stats::ln_gamma;
 
@@ -254,7 +255,7 @@ pub fn vst_transform(raw: &Mat<f64>) -> Mat<f64> {
     let min_disp: f64 = 1e-8;
     let max_disp: f64 = 10.0f64.max(n as f64);
     let mut disps = vec![0.0f64; g];
-    for i in 0..g {
+    disps.par_iter_mut().enumerate().for_each(|(i, d)| {
         let y: Vec<f64> = (0..n).map(|j| counts[(i, j)]).collect();
         // intercept-only fitted mean: mu_ij = sf_j * rowMeans(counts/sf)
         let mu: Vec<f64> = sf.iter().map(|s| s * means[i]).collect();
@@ -271,12 +272,12 @@ pub fn vst_transform(raw: &Mat<f64>) -> Mat<f64> {
         // revert to initial if MLE did not increase the likelihood (DESeq2)
         let ll_init = raw_nb_ll(alpha_init, &y, &mu);
         let ll_mle = raw_nb_ll(mle, &y, &mu);
-        disps[i] = if ll_mle < ll_init + ll_init.abs() / 1e6 {
+        *d = if ll_mle < ll_init + ll_init.abs() / 1e6 {
             alpha_init
         } else {
             mle
         };
-    }
+    });
 
     let (a0, a1) = parametric_fit(&means, &disps);
 

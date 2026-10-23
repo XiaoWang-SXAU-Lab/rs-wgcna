@@ -8,6 +8,7 @@
 
 use faer::linalg::matmul::matmul;
 use faer::{Accum, Mat, Par};
+use rayon::prelude::*;
 
 use crate::network::{NetworkType, TomDenom, TomType};
 
@@ -17,6 +18,22 @@ enum AdjType {
     UnsignedKeepSign,
     Signed,
     Hybrid,
+}
+
+/// A flat f64 buffer writable from multiple threads via disjoint indices.
+/// Callers must guarantee no two writes target the same index.
+struct SyncBuf(Vec<f64>);
+unsafe impl Sync for SyncBuf {}
+impl SyncBuf {
+    fn new(n: usize) -> Self {
+        SyncBuf(vec![0.0f64; n])
+    }
+    #[inline(always)]
+    fn set(&self, idx: usize, v: f64) {
+        unsafe {
+            *((self.0.as_ptr() as *mut f64).add(idx)) = v;
+        }
+    }
 }
 
 #[inline]
@@ -78,28 +95,24 @@ pub fn tom_from_cor(
     }
 
     // Build adjacency.
-    let mut a = Mat::<f64>::zeros(g, g);
-    for j in 0..g {
+    let mut flat_a = vec![0.0f64; g * g];
+    flat_a.par_chunks_mut(g).enumerate().for_each(|(j, col)| {
         for i in 0..g {
-            a[(i, j)] = adj_transform(cor[(i, j)], power, adj_type);
+            col[i] = adj_transform(cor[(i, j)], power, adj_type);
         }
-    }
+    });
+    let a = Mat::from_fn(g, g, |i, j| flat_a[j * g + i]);
 
     // `TomType::None` returns the adjacency directly.
     if tom_type == TomType::None {
         return a;
     }
 
-    // Set diagonal to 1 and compute connectivity (sum of |A| over the row).
+    // Compute connectivity (sum of |A| over the row), in parallel over rows.
     let mut conn = vec![0.0f64; g];
-    for i in 0..g {
-        a[(i, i)] = 1.0;
-        let mut s = 0.0;
-        for j in 0..g {
-            s += a[(i, j)].abs();
-        }
-        conn[i] = s;
-    }
+    conn.par_iter_mut().enumerate().for_each(|(i, c)| {
+        *c = flat_a.iter().skip(i).step_by(g).map(|v| v.abs()).sum();
+    });
 
     // B = A * A (symmetric).
     let mut b = Mat::<f64>::zeros(g, g);
@@ -112,8 +125,8 @@ pub fn tom_from_cor(
         TomType::Unsigned2 | TomType::Signed2 | TomType::SignedNowick2
     );
 
-    let mut tom = Mat::<f64>::zeros(g, g);
-    for j in 0..g {
+    let tom_buf = SyncBuf::new(g * g);
+    (0..g).into_par_iter().for_each(|j| {
         for i in (j + 1)..g {
             let aij = a[(i, j)];
             let bij = b[(i, j)];
@@ -169,14 +182,14 @@ pub fn tom_from_cor(
                 }
                 TomType::None => aij, // unreachable
             };
-            tom[(i, j)] = v;
-            tom[(j, i)] = v;
+            tom_buf.set(j * g + i, v);
+            tom_buf.set(i * g + j, v);
         }
-    }
+    });
 
-    for i in 0..g {
-        tom[(i, i)] = 1.0;
-    }
+    (0..g).into_par_iter().for_each(|i| {
+        tom_buf.set(i * g + i, 1.0);
+    });
 
-    tom
+    Mat::from_fn(g, g, |i, j| tom_buf.0[j * g + i])
 }

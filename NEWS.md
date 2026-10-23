@@ -3,6 +3,22 @@
 All notable changes to rs-WGCNA are documented in this file. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] — 2026-10-24
+
+### Changed
+
+- SFT: scan the full 1..20 power range (no early stop) and require a negative
+  log-log slope when selecting the soft threshold, avoiding spurious R² passes
+  at low power where the network is still dense.
+- The network step now honors the user-selected power instead of always using
+  the SFT estimate (one-step mode still auto-syncs the SFT power).
+
+### Performance
+
+- Parallelized the per-gene dispersion MLE in `vst` (≈3.4× faster filter on
+  large matrices).
+- Parallelized the O(g²) TOM adjacency / connectivity / normalization loops.
+
 ## [0.2.0] — 2026-10-23
 
 ### Added
