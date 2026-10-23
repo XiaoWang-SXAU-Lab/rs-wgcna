@@ -1,5 +1,7 @@
-//! I/O for tab-delimited expression matrices and trait tables.
+//! I/O for expression matrices and trait tables: TSV/CSV (text) and
+//! Excel workbooks (xlsx/xls/xlsb/ods).
 
+use calamine::{open_workbook_auto, Data, Reader};
 use faer::Mat;
 
 use crate::error::{Result, WgcnaError};
@@ -33,11 +35,121 @@ fn detect_delimiter(path: &str) -> Result<u8> {
     Ok(if commas > tabs { b',' } else { b'\t' })
 }
 
+/// Detect whether a file is an Excel workbook (xlsx/xls/xlsb/ods) by magic
+/// bytes: zip `PK` header (xlsx family) or OLE compound-file header (xls).
+fn is_excel(path: &str) -> bool {
+    use std::io::Read;
+    let mut buf = [0u8; 8];
+    let n = std::fs::File::open(path)
+        .ok()
+        .and_then(|mut f| f.read(&mut buf).ok())
+        .unwrap_or(0);
+    if n >= 2 && buf[0] == b'P' && buf[1] == b'K' {
+        return true;
+    }
+    n >= 8 && buf[..8] == [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]
+}
+
+fn cell_to_string(c: &Data) -> String {
+    match c {
+        Data::String(s) => s.clone(),
+        Data::Int(i) => i.to_string(),
+        Data::Float(f) => f.to_string(),
+        Data::Bool(b) => b.to_string(),
+        _ => String::new(),
+    }
+}
+
+fn cell_to_f64(c: &Data) -> Result<f64> {
+    match c {
+        Data::Int(i) => Ok(*i as f64),
+        Data::Float(f) => Ok(*f),
+        Data::String(s) => s.parse::<f64>().map_err(|_| {
+            WgcnaError::InvalidInput(format!("non-numeric value '{s}'"))
+        }),
+        _ => Err(WgcnaError::InvalidInput("non-numeric cell".into())),
+    }
+}
+
+/// Read the first sheet of an Excel workbook as a genes × samples matrix.
+fn read_expression_excel(path: &str) -> Result<ExpData> {
+    let mut wb = open_workbook_auto(path)
+        .map_err(|e| WgcnaError::InvalidInput(format!("cannot open Excel file: {e}")))?;
+    let range = wb
+        .worksheet_range_at(0)
+        .ok_or_else(|| WgcnaError::InvalidInput("workbook has no sheets".into()))?
+        .map_err(|e| WgcnaError::InvalidInput(format!("cannot read sheet: {e}")))?;
+
+    let mut rows = range.rows();
+    let header = rows
+        .next()
+        .ok_or_else(|| WgcnaError::InvalidInput("empty Excel sheet".into()))?;
+    let samples: Vec<String> = header.iter().skip(1).map(cell_to_string).collect();
+    if samples.is_empty() {
+        return Err(WgcnaError::InvalidInput(
+            "expression matrix has no sample columns".into(),
+        ));
+    }
+
+    let mut genes = Vec::new();
+    let mut data_rows: Vec<Vec<f64>> = Vec::new();
+    for row in rows {
+        if row.is_empty() {
+            continue;
+        }
+        let gene = cell_to_string(&row[0]);
+        let mut vals = Vec::with_capacity(samples.len());
+        for (i, cell) in row.iter().enumerate().skip(1) {
+            if i - 1 >= samples.len() {
+                break;
+            }
+            vals.push(cell_to_f64(cell)?);
+        }
+        if vals.len() != samples.len() {
+            return Err(WgcnaError::InvalidInput(format!(
+                "gene {gene} has {} values, expected {}",
+                vals.len(),
+                samples.len()
+            )));
+        }
+        genes.push(gene);
+        data_rows.push(vals);
+    }
+
+    if genes.is_empty() {
+        return Err(WgcnaError::InvalidInput("no genes found".into()));
+    }
+
+    let g = genes.len();
+    let n = samples.len();
+    let mut data = Mat::<f64>::zeros(g, n);
+    for (i, row) in data_rows.iter().enumerate() {
+        for (j, &v) in row.iter().enumerate() {
+            data[(i, j)] = v;
+        }
+    }
+
+    Ok(ExpData {
+        data,
+        genes,
+        samples,
+    })
+}
+
+/// Read an expression matrix from text (TSV/CSV) or Excel (xlsx/xls/xlsb/ods).
+pub fn read_expression(path: &str) -> Result<ExpData> {
+    if is_excel(path) {
+        read_expression_excel(path)
+    } else {
+        read_expression_text(path)
+    }
+}
+
 /// Read a tab/comma-delimited expression matrix.
 ///
 /// Expected layout: first row = header (`ID<DELIM>sample1<DELIM>sample2...`),
 /// each following row = `gene_id<DELIM>v1<DELIM>v2...`.
-pub fn read_expression(path: &str) -> Result<ExpData> {
+fn read_expression_text(path: &str) -> Result<ExpData> {
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(detect_delimiter(path)?)
         .has_headers(true)
@@ -98,12 +210,64 @@ pub fn read_expression(path: &str) -> Result<ExpData> {
     })
 }
 
+/// Read a trait table from text (TSV/CSV) or Excel (xlsx/xls/xlsb/ods).
+pub fn read_trait(path: &str) -> Result<(Vec<String>, Vec<String>, Mat<f64>)> {
+    if is_excel(path) {
+        read_trait_excel(path)
+    } else {
+        read_trait_text(path)
+    }
+}
+
+/// Read the first sheet of an Excel workbook as a trait table.
+fn read_trait_excel(path: &str) -> Result<(Vec<String>, Vec<String>, Mat<f64>)> {
+    let mut wb = open_workbook_auto(path)
+        .map_err(|e| WgcnaError::InvalidInput(format!("cannot open Excel file: {e}")))?;
+    let range = wb
+        .worksheet_range_at(0)
+        .ok_or_else(|| WgcnaError::InvalidInput("workbook has no sheets".into()))?
+        .map_err(|e| WgcnaError::InvalidInput(format!("cannot read sheet: {e}")))?;
+
+    let mut rows = range.rows();
+    let header = rows
+        .next()
+        .ok_or_else(|| WgcnaError::InvalidInput("empty Excel sheet".into()))?;
+    let traits: Vec<String> = header.iter().skip(1).map(cell_to_string).collect();
+
+    let mut samples = Vec::new();
+    let mut data_rows: Vec<Vec<f64>> = Vec::new();
+    for row in rows {
+        if row.is_empty() {
+            continue;
+        }
+        samples.push(cell_to_string(&row[0]));
+        let mut vals = Vec::with_capacity(traits.len());
+        for (i, cell) in row.iter().enumerate().skip(1) {
+            if i - 1 >= traits.len() {
+                break;
+            }
+            vals.push(cell_to_f64(cell)?);
+        }
+        data_rows.push(vals);
+    }
+
+    let s = samples.len();
+    let t = traits.len();
+    let mut data = Mat::<f64>::zeros(s, t);
+    for (i, row) in data_rows.iter().enumerate() {
+        for (j, &v) in row.iter().enumerate() {
+            data[(i, j)] = v;
+        }
+    }
+    Ok((samples, traits, data))
+}
+
 /// Read a tab/comma-delimited trait table.
 ///
 /// Expected: first column = sample id, remaining columns = traits
 /// (already one-hot encoded for qualitative traits). Returns (samples, traits, data)
 /// where `data` is samples x traits.
-pub fn read_trait(path: &str) -> Result<(Vec<String>, Vec<String>, Mat<f64>)> {
+fn read_trait_text(path: &str) -> Result<(Vec<String>, Vec<String>, Mat<f64>)> {
     let mut rdr = csv::ReaderBuilder::new()
         .delimiter(detect_delimiter(path)?)
         .has_headers(true)

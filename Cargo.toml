@@ -13,12 +13,16 @@ readme = "README.md"
 
 [dependencies]
 anyhow = "1.0.104"
+calamine = "0.26"
 csv = "1.4.0"
 faer = "0.24.4"
 rayon = "1.12.0"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 thiserror = "2.0.21"
+# Pin zip below 2.6: calamine 0.26.1 uses ZipFile<'a> (no generic), which
+# broke in zip 2.6.
+zip = ">=2.0, <2.6"
 
 [[bin]]
 name = "rs-wgcna-worker"
