@@ -3,6 +3,17 @@
 All notable changes to rs-WGCNA are documented in this file. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] — 2026-10-26
+
+### Fixed
+
+- Module-detail and hub steps now honor the module-trait "trait source" (the
+  uploaded table or the sample_info one-hot column) instead of hardcoding
+  `trait.tsv`. GS/MM are now computed against the correct trait.
+- Silent fallbacks replaced with loud errors: `trait_column` (no more index-0
+  fallback), and network/tom type parsing panic on unknown values instead of
+  silently defaulting.
+
 ## [0.4.0] — 2026-10-26
 
 ### Added

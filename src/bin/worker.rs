@@ -351,15 +351,15 @@ fn parse_filter_method(s: &str) -> FilterMethod {
 }
 
 fn parse_network_type(s: &str) -> NetworkType {
-    NetworkType::from_str(s).unwrap_or(NetworkType::Unsigned)
+    NetworkType::from_str(s).unwrap_or_else(|_| panic!("无法解析 network_type: '{s}'"))
 }
 
 fn parse_tom_type(s: &str) -> TomType {
-    TomType::from_str(s).unwrap_or(TomType::Signed)
+    TomType::from_str(s).unwrap_or_else(|_| panic!("无法解析 tom_type: '{s}'"))
 }
 
 fn parse_tom_denom(s: &str) -> TomDenom {
-    TomDenom::from_str(s).unwrap_or(TomDenom::Min)
+    TomDenom::from_str(s).unwrap_or_else(|_| panic!("无法解析 tom_denom: '{s}'"))
 }
 
 fn read_filtered(job_dir: &Path) -> rs_wgcna::io::ExpData {
@@ -635,7 +635,9 @@ fn largest_module(colors: &[String]) -> String {
 }
 
 fn trait_column(traits: &[String], name: &str) -> usize {
-    traits.iter().position(|t| t == name).unwrap_or(0)
+    traits.iter().position(|t| t == name).unwrap_or_else(|| {
+        panic!("找不到 trait '{name}'；当前可用 trait: {:?}", traits)
+    })
 }
 
 /// Build a one-hot trait matrix from sample_info.tsv's `column`, aligned to
@@ -683,15 +685,18 @@ fn sample_info_one_hot(
     Ok((categories, data))
 }
 
-fn run_module_trait(job_dir: &Path, params: &ModuleTraitParams, _threads: usize) {
-    write_progress(job_dir, "module_trait", "running", 0.2, "reading modules...");
-    let exp = read_filtered(job_dir);
-    let mj = read_modules(job_dir);
-    // trait source: uploaded table OR generated from sample_info
-    let (traits, tdata) = if params.trait_source == "sample_info" {
+/// Read the trait matrix honoring the trait source: the uploaded trait.tsv, or a
+/// one-hot generated from sample_info by `trait_column`.
+fn read_trait_with_source(
+    job_dir: &Path,
+    exp: &rs_wgcna::io::ExpData,
+    trait_source: &str,
+    trait_column: &str,
+) -> (Vec<String>, Mat<f64>) {
+    if trait_source == "sample_info" {
         sample_info_one_hot(
             job_dir.join("sample_info.tsv").to_str().unwrap(),
-            &params.trait_column,
+            trait_column,
             &exp.samples,
         )
         .expect("read sample_info.tsv")
@@ -699,7 +704,14 @@ fn run_module_trait(job_dir: &Path, params: &ModuleTraitParams, _threads: usize)
         let (_samples, traits, tdata) =
             read_trait(job_dir.join("trait.tsv").to_str().unwrap()).expect("read trait.tsv");
         (traits, tdata)
-    };
+    }
+}
+
+fn run_module_trait(job_dir: &Path, params: &ModuleTraitParams, _threads: usize) {
+    write_progress(job_dir, "module_trait", "running", 0.2, "reading modules...");
+    let exp = read_filtered(job_dir);
+    let mj = read_modules(job_dir);
+    let (traits, tdata) = read_trait_with_source(job_dir, &exp, &params.trait_source, &params.trait_column);
 
     let mods = sorted_modules(&mj.colors);
     let g = mj.genes.len();
@@ -745,11 +757,10 @@ fn run_module_trait(job_dir: &Path, params: &ModuleTraitParams, _threads: usize)
     write_progress(job_dir, "module_trait", "done", 1.0, "module-trait done");
 }
 
-fn run_module_detail(job_dir: &Path, params: &ModuleDetailParams, _threads: usize) {
+fn run_module_detail(job_dir: &Path, params: &ModuleDetailParams, trait_params: &ModuleTraitParams, _threads: usize) {
     let exp = read_filtered(job_dir);
     let mj = read_modules(job_dir);
-    let (_s, traits, tdata) =
-        read_trait(job_dir.join("trait.tsv").to_str().unwrap()).expect("read trait.tsv");
+    let (traits, tdata) = read_trait_with_source(job_dir, &exp, &trait_params.trait_source, &trait_params.trait_column);
     let t_idx = trait_column(&traits, &params.select_trait);
     let trait_v: Vec<f64> = (0..tdata.nrows()).map(|j| tdata[(j, t_idx)]).collect();
 
@@ -791,11 +802,10 @@ fn run_module_detail(job_dir: &Path, params: &ModuleDetailParams, _threads: usiz
     write_progress(job_dir, "module_detail", "done", 1.0, "module detail done");
 }
 
-fn run_hub(job_dir: &Path, params: &HubParams, net_params: &NetworkParams, threads: usize) {
+fn run_hub(job_dir: &Path, params: &HubParams, net_params: &NetworkParams, trait_params: &ModuleTraitParams, threads: usize) {
     let exp = read_filtered(job_dir);
     let mj = read_modules(job_dir);
-    let (_s, traits, tdata) =
-        read_trait(job_dir.join("trait.tsv").to_str().unwrap()).expect("read trait.tsv");
+    let (traits, tdata) = read_trait_with_source(job_dir, &exp, &trait_params.trait_source, &trait_params.trait_column);
     let t_idx = trait_column(&traits, &params.select_trait);
     let trait_v: Vec<f64> = (0..tdata.nrows()).map(|j| tdata[(j, t_idx)]).collect();
 
@@ -991,8 +1001,8 @@ fn main() {
         "soft_threshold" => run_soft_threshold(&job_dir, &params.soft_threshold, threads),
         "network" => run_network(&job_dir, &params.network, threads),
         "module_trait" => run_module_trait(&job_dir, &params.module_trait, threads),
-        "module_detail" => run_module_detail(&job_dir, &params.module_detail, threads),
-        "hub" => run_hub(&job_dir, &params.hub, &params.network, threads),
+        "module_detail" => run_module_detail(&job_dir, &params.module_detail, &params.module_trait, threads),
+        "hub" => run_hub(&job_dir, &params.hub, &params.network, &params.module_trait, threads),
         other => {
             eprintln!("unknown step: {other}");
             std::process::exit(2);
