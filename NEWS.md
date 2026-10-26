@@ -3,6 +3,14 @@
 All notable changes to rs-WGCNA are documented in this file. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] — 2026-10-26
+
+### Added
+
+- Module-trait trait source: use the uploaded trait table, or generate a
+  one-hot categorical trait matrix from `sample_info.tsv` by a chosen column
+  (e.g. `group` / `condition` / `time_h`), aligned to the expression samples.
+
 ## [0.3.0] — 2026-10-24
 
 ### Changed

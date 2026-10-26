@@ -116,8 +116,21 @@ impl Default for NetworkParams {
     }
 }
 
-#[derive(Debug, Deserialize, Default)]
-struct ModuleTraitParams {}
+#[derive(Debug, Deserialize)]
+#[serde(default)]
+struct ModuleTraitParams {
+    trait_source: String, // "uploaded"（上传的 trait 表）| "sample_info"（由 sample_info 生成）
+    trait_column: String, // sample_info 中用于 one-hot 的列，如 "group" / "condition" / "time_h"
+}
+
+impl Default for ModuleTraitParams {
+    fn default() -> Self {
+        ModuleTraitParams {
+            trait_source: "uploaded".into(),
+            trait_column: String::new(),
+        }
+    }
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(default)]
@@ -625,12 +638,68 @@ fn trait_column(traits: &[String], name: &str) -> usize {
     traits.iter().position(|t| t == name).unwrap_or(0)
 }
 
-fn run_module_trait(job_dir: &Path, _params: &ModuleTraitParams, _threads: usize) {
+/// Build a one-hot trait matrix from sample_info.tsv's `column`, aligned to
+/// `exp_samples`. Returns (category_names, samples × categories one-hot matrix).
+fn sample_info_one_hot(
+    path: &str,
+    column: &str,
+    exp_samples: &[String],
+) -> rs_wgcna::error::Result<(Vec<String>, Mat<f64>)> {
+    use std::collections::HashMap;
+    let mut rdr = csv::ReaderBuilder::new()
+        .delimiter(b'\t')
+        .has_headers(true)
+        .flexible(true)
+        .from_path(path)?;
+    let headers = rdr.headers()?.clone();
+    let col_idx = headers.iter().position(|h| h == column).ok_or_else(|| {
+        rs_wgcna::error::WgcnaError::InvalidInput(format!("sample_info column '{column}' not found"))
+    })?;
+
+    let mut map: HashMap<String, String> = HashMap::new();
+    for rec in rdr.records() {
+        let rec = rec?;
+        let id = rec.get(0).unwrap_or("").to_string();
+        let val = rec.get(col_idx).unwrap_or("").to_string();
+        map.insert(id, val);
+    }
+
+    let mut categories: Vec<String> = Vec::new();
+    for s in exp_samples {
+        let v = map.get(s).cloned().unwrap_or_default();
+        if !categories.contains(&v) {
+            categories.push(v);
+        }
+    }
+
+    let n = exp_samples.len();
+    let c = categories.len();
+    let mut data = Mat::<f64>::zeros(n, c);
+    for i in 0..n {
+        let v = map.get(&exp_samples[i]).cloned().unwrap_or_default();
+        let ci = categories.iter().position(|x| *x == v).unwrap_or(0);
+        data[(i, ci)] = 1.0;
+    }
+    Ok((categories, data))
+}
+
+fn run_module_trait(job_dir: &Path, params: &ModuleTraitParams, _threads: usize) {
     write_progress(job_dir, "module_trait", "running", 0.2, "reading modules...");
     let exp = read_filtered(job_dir);
     let mj = read_modules(job_dir);
-    let (_samples, traits, tdata) =
-        read_trait(job_dir.join("trait.tsv").to_str().unwrap()).expect("read trait.tsv");
+    // trait source: uploaded table OR generated from sample_info
+    let (traits, tdata) = if params.trait_source == "sample_info" {
+        sample_info_one_hot(
+            job_dir.join("sample_info.tsv").to_str().unwrap(),
+            &params.trait_column,
+            &exp.samples,
+        )
+        .expect("read sample_info.tsv")
+    } else {
+        let (_samples, traits, tdata) =
+            read_trait(job_dir.join("trait.tsv").to_str().unwrap()).expect("read trait.tsv");
+        (traits, tdata)
+    };
 
     let mods = sorted_modules(&mj.colors);
     let g = mj.genes.len();
