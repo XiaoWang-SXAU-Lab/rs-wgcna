@@ -14,6 +14,7 @@ use faer::Mat;
 use serde::{Deserialize, Serialize};
 
 use rs_wgcna::correlation::pearson;
+use rs_wgcna::clustering::{cmeans, cmeans_validity, kmeans, kmeans_wss, relabel_by_size};
 use rs_wgcna::eigengene::module_eigengene;
 use rs_wgcna::filter::{
     low_expression_mask, normalize, top_genes_by, FilterMethod, NormalizeMethod,
@@ -46,6 +47,10 @@ struct Params {
     module_detail: ModuleDetailParams,
     #[serde(default)]
     hub: HubParams,
+    #[serde(default)]
+    overview: OverviewParams,
+    #[serde(default)]
+    cluster: ClusterParams,
 }
 
 #[derive(Debug, Deserialize)]
@@ -176,6 +181,43 @@ impl Default for HubParams {
     }
 }
 
+// OverviewParams drives the "module overview" network: it keeps the top-P% of
+// within-module edges (per module) and the top-P% of cross-module edges, so
+// small modules keep their strongest edges instead of being wiped out by a
+// global weight threshold.
+#[derive(Debug, Deserialize)]
+#[serde(default)]
+struct OverviewParams {
+    edge_percentile: f64, // keep top P% of edges per module / cross-module (0-100)
+}
+
+impl Default for OverviewParams {
+    fn default() -> Self {
+        OverviewParams { edge_percentile: 10.0 }
+    }
+}
+
+// ClusterParams drives the KMeans / fuzzy c-means comparison.
+#[derive(Debug, Deserialize)]
+#[serde(default)]
+struct ClusterParams {
+    method: String, // kmeans | cmeans
+    k: usize,       // 0 = auto (elbow / validity)
+    seed: u64,
+    kmax: usize,
+}
+
+impl Default for ClusterParams {
+    fn default() -> Self {
+        ClusterParams {
+            method: "kmeans".into(),
+            k: 0,
+            seed: 42,
+            kmax: 12,
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Output types
 // ---------------------------------------------------------------------------
@@ -246,7 +288,7 @@ struct ModulesJson {
     colors: Vec<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct MtaitOutput {
     modules: Vec<String>,
     traits: Vec<String>,
@@ -802,6 +844,85 @@ fn run_module_detail(job_dir: &Path, params: &ModuleDetailParams, trait_params: 
     write_progress(job_dir, "module_detail", "done", 1.0, "module detail done");
 }
 
+// run_module_detail_all computes GS/MM + expression for every (non-grey) module,
+// choosing each module's best trait (highest |correlation|) for the GS axis.
+// Outputs step5_detail_<module>.json per module + step5_detail_all.json (index).
+fn run_module_detail_all(job_dir: &Path, trait_params: &ModuleTraitParams, threads: usize) {
+    let exp = read_filtered(job_dir);
+    let mj = read_modules(job_dir);
+    let (traits, tdata) = read_trait_with_source(job_dir, &exp, &trait_params.trait_source, &trait_params.trait_column);
+
+    // module-trait cor (modules × traits) to pick the best trait per module
+    let mt: MtaitOutput = read_json(job_dir, "step4_mtrait.json");
+    let mut module_index = std::collections::HashMap::new();
+    for (i, m) in mt.modules.iter().enumerate() {
+        module_index.insert(m.clone(), i);
+    }
+
+    let mut summary: Vec<serde_json::Value> = Vec::new();
+    let mut modules: Vec<String> = mj.colors.clone();
+    modules.sort();
+    modules.dedup();
+
+    for (idx, m) in modules.iter().enumerate() {
+        if m == "grey" {
+            continue;
+        }
+        write_progress(job_dir, "module_detail_all", "running", (idx as f64) / modules.len().max(1) as f64, &format!("module {m}..."));
+
+        // best trait for this module (highest |cor|)
+        let mut best_ti = 0usize;
+        let mut best_c = -1.0f64;
+        if let Some(&mi) = module_index.get(m) {
+            for ti in 0..mt.traits.len().min(mt.cor.get(mi).map_or(0, |v| v.len())) {
+                let c = mt.cor[mi][ti].abs();
+                if c > best_c {
+                    best_c = c;
+                    best_ti = ti;
+                }
+            }
+        }
+        let trait_name = traits.get(best_ti).cloned().unwrap_or_default();
+        let trait_v: Vec<f64> = (0..tdata.nrows()).map(|j| tdata[(j, best_ti)]).collect();
+
+        let mod_idx: Vec<usize> = (0..mj.genes.len()).filter(|&i| mj.colors[i] == *m).collect();
+        let me = module_eigengene(&exp.data, &mod_idx);
+
+        let mut genes = Vec::new();
+        let mut gs = Vec::new();
+        let mut mm = Vec::new();
+        let mut expression = Vec::new();
+        for &gi in &mod_idx {
+            let gene: Vec<f64> = (0..exp.n_samples()).map(|j| exp.data[(gi, j)]).collect();
+            genes.push(mj.genes[gi].clone());
+            gs.push(pearson_vec(&gene, &trait_v));
+            mm.push(pearson_vec(&gene, &me));
+            expression.push(gene);
+        }
+
+        write_json(
+            job_dir,
+            &format!("step5_detail_{}.json", m),
+            &DetailOutput {
+                module: m.clone(),
+                trait_name,
+                genes,
+                gs,
+                mm,
+                expression,
+                eigengene: me,
+                samples: exp.samples.clone(),
+            },
+        );
+        summary.push(serde_json::json!({ "module": m, "trait": mt.traits.get(best_ti).cloned().unwrap_or_default(), "cor": best_c }));
+    }
+
+    let s = serde_json::to_string(&serde_json::json!({ "modules": summary })).expect("serialize detail_all");
+    std::fs::write(job_dir.join("step5_detail_all.json"), s).expect("write step5_detail_all.json");
+    let _ = threads;
+    write_progress(job_dir, "module_detail_all", "done", 1.0, "all module details done");
+}
+
 fn run_hub(job_dir: &Path, params: &HubParams, net_params: &NetworkParams, trait_params: &ModuleTraitParams, threads: usize) {
     let exp = read_filtered(job_dir);
     let mj = read_modules(job_dir);
@@ -817,6 +938,22 @@ fn run_hub(job_dir: &Path, params: &HubParams, net_params: &NetworkParams, trait
     let g = mj.genes.len();
     let mod_idx: Vec<usize> = (0..g).filter(|&i| mj.colors[i] == sel_module).collect();
     let me = module_eigengene(&exp.data, &mod_idx);
+
+    // Smart hub definition: reference GS (trait) only when the module has a
+    // "significant strong" trait association (|cor| > 0.6 AND p < 0.05).
+    // Otherwise use kME alone, regardless of phenotype data.
+    let mut has_sig_trait = false;
+    let mt: MtaitOutput = read_json(job_dir, "step4_mtrait.json");
+    if let Some(mi) = mt.modules.iter().position(|m| *m == sel_module) {
+        for ti in 0..mt.traits.len() {
+            if mi < mt.cor.len() && ti < mt.cor[mi].len() && mi < mt.p.len() && ti < mt.p[mi].len() {
+                if mt.cor[mi][ti].abs() > 0.6 && mt.p[mi][ti] < 0.05 {
+                    has_sig_trait = true;
+                    break;
+                }
+            }
+        }
+    }
 
     use std::collections::{HashMap, HashSet};
 
@@ -834,10 +971,12 @@ fn run_hub(job_dir: &Path, params: &HubParams, net_params: &NetworkParams, trait
     scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
     let metric: HashMap<usize, (f64, f64)> = scored.iter().map(|&(gi, k, g)| (gi, (k, g))).collect();
 
-    // Hub gene table: |kME| > cutoff AND |GS| > cutoff, sorted by kME (desc).
+    // Hub gene table: |kME| > cutoff, and (only when a significant strong trait
+    // exists) also |GS| > cutoff; sorted by kME (desc).
     let mut hub = Vec::new();
     for &(gi, k, g) in &scored {
-        if k > params.kme_cutoff && g > params.gs_cutoff {
+        let pass = k > params.kme_cutoff && (!has_sig_trait || g > params.gs_cutoff);
+        if pass {
             hub.push(HubGene {
                 gene: mj.genes[gi].clone(),
                 kme: k,
@@ -955,6 +1094,241 @@ fn run_hub(job_dir: &Path, params: &HubParams, net_params: &NetworkParams, trait
     write_progress(job_dir, "hub", "done", 1.0, "hub genes done");
 }
 
+// run_overview_network builds the gene-level overview network: it recomputes the
+// full TOM and emits edges above the weight threshold plus per-gene degree. The
+// dense TOM is never written to disk; only the thresholded (sparse) edges are.
+fn run_overview_network(job_dir: &Path, ov: &OverviewParams, net: &NetworkParams, threads: usize) {
+    write_progress(job_dir, "overview", "running", 0.1, "reading expression...");
+    let exp = read_filtered(job_dir);
+    let mj: ModulesJson = read_json(job_dir, "step3_modules.json");
+    let g = exp.data.nrows();
+
+    write_progress(job_dir, "overview", "running", 0.3, "computing TOM...");
+    let cor = pearson(&exp.data, threads).expect("overview correlation");
+    let tom = tom_from_cor(
+        &cor,
+        net.power,
+        parse_network_type(&net.network_type),
+        parse_tom_type(&net.tom_type),
+        parse_tom_denom(&net.tom_denom),
+        threads,
+    );
+
+    write_progress(job_dir, "overview", "running", 0.7, "extracting edges...");
+
+    // Build module id per gene.
+    let mut module_names: Vec<String> = Vec::new();
+    let mut module_id = vec![0usize; g];
+    for i in 0..g {
+        let color = mj.colors.get(i).map(|c| c.as_str()).unwrap_or("grey");
+        let id = module_names.iter().position(|c| c == color).unwrap_or_else(|| {
+            module_names.push(color.to_string());
+            module_names.len() - 1
+        });
+        module_id[i] = id;
+    }
+
+    // Histogram the edge weights, split by within-module vs cross-module, so we
+    // can compute a per-module percentile threshold (small modules keep their
+    // strongest edges instead of being wiped out by a global cutoff).
+    const BINS: usize = 1000;
+    let p = ov.edge_percentile.clamp(0.0, 100.0);
+    let mut mod_hist = vec![vec![0usize; BINS]; module_names.len()];
+    let mut cross_hist = vec![0usize; BINS];
+    for a in 0..g {
+        for b in (a + 1)..g {
+            let w = tom[(a, b)];
+            let bin = ((w * BINS as f64) as usize).min(BINS - 1);
+            if module_id[a] == module_id[b] {
+                mod_hist[module_id[a]][bin] += 1;
+            } else {
+                cross_hist[bin] += 1;
+            }
+        }
+    }
+
+    // P-th percentile threshold from a histogram (keep the top P% of weights).
+    fn threshold_from_hist(hist: &[usize], bins: usize, p: f64) -> f64 {
+        let total: usize = hist.iter().sum();
+        if total == 0 {
+            return 0.0;
+        }
+        let target = (total as f64 * (1.0 - p / 100.0)) as usize;
+        let mut cum = 0usize;
+        for (bin, &count) in hist.iter().enumerate() {
+            cum += count;
+            if cum >= target {
+                return bin as f64 / bins as f64;
+            }
+        }
+        0.0
+    }
+    let mod_threshold: Vec<f64> = mod_hist
+        .iter()
+        .map(|h| threshold_from_hist(h, BINS, p))
+        .collect();
+    let cross_threshold = threshold_from_hist(&cross_hist, BINS, p);
+
+    let mut edges: Vec<(usize, usize, f64)> = Vec::new();
+    let mut degree = vec![0usize; g];
+    for a in 0..g {
+        for b in (a + 1)..g {
+            let w = tom[(a, b)];
+            let th = if module_id[a] == module_id[b] {
+                mod_threshold[module_id[a]]
+            } else {
+                cross_threshold
+            };
+            if w >= th {
+                edges.push((a, b, w));
+                degree[a] += 1;
+                degree[b] += 1;
+            }
+        }
+    }
+
+    // write edges (gene ids + weight)
+    let mut f = std::fs::File::create(job_dir.join("network_edges.tsv")).expect("create network_edges.tsv");
+    let _ = writeln!(f, "source\ttarget\tweight");
+    for (a, b, w) in &edges {
+        let _ = writeln!(f, "{}\t{}\t{:.6}", exp.genes[*a], exp.genes[*b], w);
+    }
+    drop(f);
+
+    // write nodes (gene id + module color + degree)
+    let mut nf = std::fs::File::create(job_dir.join("network_nodes.tsv")).expect("create network_nodes.tsv");
+    let _ = writeln!(nf, "gene\tmodule\tdegree");
+    for i in 0..g {
+        let color = mj.colors.get(i).map(|c| c.as_str()).unwrap_or("grey");
+        let _ = writeln!(nf, "{}\t{}\t{}", exp.genes[i], color, degree[i]);
+    }
+    drop(nf);
+
+    write_progress(job_dir, "overview", "done", 1.0, "overview network done");
+}
+
+// run_cluster computes a KMeans or fuzzy c-means clustering over the z-scored
+// filtered expression, for comparison with WGCNA modules. R is only used for
+// plotting the resulting clusters.
+fn run_cluster(job_dir: &Path, cp: &ClusterParams, threads: usize) {
+    write_progress(job_dir, "cluster", "running", 0.1, "reading expression...");
+    let exp = read_filtered(job_dir);
+    let g = exp.data.nrows();
+    let n = exp.data.ncols();
+
+    // z-score each gene (row)
+    let mut z = Mat::<f64>::zeros(g, n);
+    for i in 0..g {
+        let mean: f64 = (0..n).map(|j| exp.data[(i, j)]).sum::<f64>() / n as f64;
+        let var: f64 = (0..n).map(|j| (exp.data[(i, j)] - mean).powi(2)).sum::<f64>() / n as f64;
+        let sd = var.sqrt().max(1e-12);
+        for j in 0..n {
+            z[(i, j)] = (exp.data[(i, j)] - mean) / sd;
+        }
+    }
+
+    write_progress(job_dir, "cluster", "running", 0.4, "clustering...");
+    let method = if cp.method == "cmeans" { "cmeans" } else { "kmeans" };
+    let mut metrics = None;
+    let mut degenerate = false;
+
+    let (hard, centers, score, score_name) = if method == "cmeans" {
+        let kk = if cp.k > 0 {
+            cp.k
+        } else {
+            let (xb, pc, ks) = cmeans_validity(&z, cp.kmax, cp.seed, 2.0);
+            let kk = ks[xb.iter().enumerate().min_by(|a, b| a.1.partial_cmp(b.1).unwrap()).unwrap().0];
+            metrics = Some((ks.clone(), Vec::new(), xb, pc));
+            kk
+        };
+        let (u, centers) = cmeans(&z, kk, cp.seed, 100, 2.0);
+        // Detect degenerate convergence (uniform membership): partition
+        // coefficient ≈ 1/k means no real clusters were formed.
+        let pc: f64 = u.iter().flatten().map(|v| v * v).sum::<f64>() / g as f64;
+        if pc < 1.0 / kk as f64 + 1e-3 {
+            degenerate = true;
+        }
+        let hard: Vec<usize> = (0..g).map(|i| (0..kk).max_by(|&a, &b| u[i][a].partial_cmp(&u[i][b]).unwrap()).unwrap()).collect();
+        let hard = relabel_by_size(&hard, kk);
+        let score: Vec<f64> = (0..g).map(|i| u[i].iter().copied().fold(f64::NEG_INFINITY, f64::max)).collect();
+        // centers are in original label order; reorder by size to match relabeled hard
+        let counts: Vec<usize> = {
+            let mut c = vec![0usize; kk];
+            for &a in &hard { c[a] += 1; }
+            c
+        };
+        let mut order: Vec<usize> = (0..kk).collect();
+        order.sort_by_key(|&c| std::cmp::Reverse(counts[c]));
+        let centers_reordered: Vec<Vec<f64>> = order.iter().map(|&old| centers[old].clone()).collect();
+        (hard, centers_reordered, score, "membership")
+    } else {
+        let kk = if cp.k > 0 {
+            cp.k
+        } else {
+            let (wss, ks) = kmeans_wss(&z, cp.kmax, cp.seed);
+            // elbow: point farthest from the line connecting the endpoints
+            let line = |i: usize| wss[0] + (wss[wss.len() - 1] - wss[0]) * i as f64 / (wss.len() - 1) as f64;
+            let mut best_i = 0usize;
+            let mut best_d = -1.0f64;
+            for (i, &w) in wss.iter().enumerate() {
+                let d = (w - line(i)).abs();
+                if d > best_d { best_d = d; best_i = i; }
+            }
+            let kk = ks[best_i];
+            metrics = Some((ks.clone(), wss.clone(), Vec::new(), Vec::new()));
+            kk
+        };
+        let (assign, centers, _wss) = kmeans(&z, kk, cp.seed, 100, 10);
+        let hard = relabel_by_size(&assign, kk);
+        let centers_reordered: Vec<Vec<f64>> = {
+            let counts: Vec<usize> = {
+                let mut c = vec![0usize; kk];
+                for &a in &hard { c[a] += 1; }
+                c
+            };
+            let mut order: Vec<usize> = (0..kk).collect();
+            order.sort_by_key(|&c| std::cmp::Reverse(counts[c]));
+            order.iter().map(|&old| centers[old].clone()).collect()
+        };
+        // score = 1 - distance to own center / 3 (loose closeness)
+        let score: Vec<f64> = (0..g).map(|i| {
+            let c = hard[i];
+            let d = centers_reordered[c].iter().zip((0..n).map(|j| z[(i, j)])).map(|(a, b)| (a - b) * (a - b)).sum::<f64>().sqrt();
+            1.0 - (d / 3.0).min(1.0)
+        }).collect();
+        (hard, centers_reordered, score, "score")
+    };
+
+    let kk = centers.len();
+    let cluster_names: Vec<String> = (0..kk).map(|i| format!("C{}", i + 1)).collect();
+    let clusters: Vec<String> = hard.iter().map(|&c| cluster_names[c].clone()).collect();
+    let mut centers_map = BTreeMap::new();
+    for (i, c) in centers.iter().enumerate() {
+        centers_map.insert(cluster_names[i].clone(), c.clone());
+    }
+    let samples: Vec<String> = (0..n).map(|j| exp.samples[j].clone()).collect();
+
+    let out = serde_json::json!({
+        "genes": exp.genes,
+        "samples": samples,
+        "clusters": clusters,
+        "cluster_order": cluster_names,
+        "centers": centers_map,
+        "score": score,
+        "score_name": score_name,
+        "method": method,
+        "k": kk,
+        "degenerate": degenerate,
+        "metrics": metrics.map(|(ks, wss, xb, pc)| serde_json::json!({
+            "ks": ks, "wss": wss, "xb": xb, "pc": pc
+        })),
+    });
+    let s = serde_json::to_string(&out).expect("serialize cluster output");
+    std::fs::write(job_dir.join("overview_clusters.json"), s).expect("write overview_clusters.json");
+    let _ = threads;
+    write_progress(job_dir, "cluster", "done", 1.0, "clustering done");
+}
+
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
@@ -1003,6 +1377,9 @@ fn main() {
         "module_trait" => run_module_trait(&job_dir, &params.module_trait, threads),
         "module_detail" => run_module_detail(&job_dir, &params.module_detail, &params.module_trait, threads),
         "hub" => run_hub(&job_dir, &params.hub, &params.network, &params.module_trait, threads),
+        "overview_network" => run_overview_network(&job_dir, &params.overview, &params.network, threads),
+        "cluster" => run_cluster(&job_dir, &params.cluster, threads),
+        "module_detail_all" => run_module_detail_all(&job_dir, &params.module_trait, threads),
         other => {
             eprintln!("unknown step: {other}");
             std::process::exit(2);

@@ -10,6 +10,7 @@
 //! is handled inside each routine.
 
 pub mod adjacency;
+pub mod clustering;
 pub mod correlation;
 pub mod cutree;
 pub mod eigengene;
