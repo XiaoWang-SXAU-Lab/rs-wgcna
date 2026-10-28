@@ -1207,6 +1207,57 @@ fn run_overview_network(job_dir: &Path, ov: &OverviewParams, net: &NetworkParams
     write_progress(job_dir, "overview", "done", 1.0, "overview network done");
 }
 
+// run_cluster_elbow computes validity/elbow metrics over k = 2..kmax and writes
+// overview_elbow.json (with a suggested k), without running the final clustering.
+fn run_cluster_elbow(job_dir: &Path, cp: &ClusterParams) {
+    write_progress(job_dir, "cluster_elbow", "running", 0.1, "reading expression...");
+    let exp = read_filtered(job_dir);
+    let g = exp.data.nrows();
+    let n = exp.data.ncols();
+
+    let mut z = Mat::<f64>::zeros(g, n);
+    for i in 0..g {
+        let mean: f64 = (0..n).map(|j| exp.data[(i, j)]).sum::<f64>() / n as f64;
+        let var: f64 = (0..n).map(|j| (exp.data[(i, j)] - mean).powi(2)).sum::<f64>() / n as f64;
+        let sd = var.sqrt().max(1e-12);
+        for j in 0..n {
+            z[(i, j)] = (exp.data[(i, j)] - mean) / sd;
+        }
+    }
+
+    write_progress(job_dir, "cluster_elbow", "running", 0.5, "computing validity metrics...");
+    let method = if cp.method == "cmeans" { "cmeans" } else { "kmeans" };
+    let (ks, wss, xb, pc, suggested_k) = if method == "cmeans" {
+        let (xb, pc, ks) = cmeans_validity(&z, cp.kmax, cp.seed, 2.0);
+        let min_i = xb.iter().enumerate().min_by(|a, b| a.1.partial_cmp(b.1).unwrap()).unwrap().0;
+        let suggested_k = ks[min_i];
+        (ks, Vec::new(), xb, pc, suggested_k)
+    } else {
+        let (wss, ks) = kmeans_wss(&z, cp.kmax, cp.seed);
+        let line = |i: usize| wss[0] + (wss[wss.len() - 1] - wss[0]) * i as f64 / (wss.len() - 1) as f64;
+        let mut best_i = 0usize;
+        let mut best_d = -1.0f64;
+        for (i, &w) in wss.iter().enumerate() {
+            let d = (w - line(i)).abs();
+            if d > best_d { best_d = d; best_i = i; }
+        }
+        let suggested_k = ks[best_i];
+        (ks, wss, Vec::new(), Vec::new(), suggested_k)
+    };
+
+    let out = serde_json::json!({
+        "method": method,
+        "ks": ks,
+        "wss": wss,
+        "xb": xb,
+        "pc": pc,
+        "suggested_k": suggested_k,
+    });
+    let s = serde_json::to_string(&out).expect("serialize elbow output");
+    std::fs::write(job_dir.join("overview_elbow.json"), s).expect("write overview_elbow.json");
+    write_progress(job_dir, "cluster_elbow", "done", 1.0, "elbow done");
+}
+
 // run_cluster computes a KMeans or fuzzy c-means clustering over the z-scored
 // filtered expression, for comparison with WGCNA modules. R is only used for
 // plotting the resulting clusters.
@@ -1378,6 +1429,7 @@ fn main() {
         "module_detail" => run_module_detail(&job_dir, &params.module_detail, &params.module_trait, threads),
         "hub" => run_hub(&job_dir, &params.hub, &params.network, &params.module_trait, threads),
         "overview_network" => run_overview_network(&job_dir, &params.overview, &params.network, threads),
+        "cluster_elbow" => run_cluster_elbow(&job_dir, &params.cluster),
         "cluster" => run_cluster(&job_dir, &params.cluster, threads),
         "module_detail_all" => run_module_detail_all(&job_dir, &params.module_trait, threads),
         other => {
