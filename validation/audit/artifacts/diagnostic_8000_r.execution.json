@@ -1,0 +1,8 @@
+{
+  "name": "diagnostic_8000_r",
+  "command": "R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH=/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/accelerate_blas VECLIB_MAXIMUM_THREADS=1 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/audit_real_reference.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_8000_r 8000",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 29.751423120498657,
+  "log": "artifacts/diagnostic_8000_r.log"
+}

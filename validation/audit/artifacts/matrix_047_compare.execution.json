@@ -1,0 +1,8 @@
+{
+  "name": "matrix_047_compare",
+  "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_047/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_047/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_047/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 0.32517385482788086,
+  "log": "artifacts/matrix_047_compare.log"
+}

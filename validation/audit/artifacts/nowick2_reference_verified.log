@@ -1,0 +1,16 @@
+Warning message:
+package ‘WGCNA’ was built under R version 4.5.2 
+[1] "unsigned"
+     [,1] [,2]
+[1,]  1.0  0.5
+[2,]  0.5  1.0
+[1] "signed"
+     [,1] [,2]
+[1,]    1    0
+[2,]    0    1
+[1] "signed hybrid"
+     [,1] [,2]
+[1,]    1    0
+[2,]    0    1
+[1] "none"            "unsigned"        "signed"          "signed Nowick"  
+[5] "unsigned 2"      "signed 2"        "signed Nowick 2"

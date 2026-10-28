@@ -1,0 +1,167 @@
+   Compiling psm v0.1.24
+   Compiling zstd-sys v2.1.2+zstd.1.5.7
+   Compiling bzip2-sys v0.1.13+1.0.8
+   Compiling lzma-sys v0.1.20
+   Compiling stacker v0.1.25
+   Compiling pest v2.9.4
+   Compiling bzip2 v0.5.2
+   Compiling pest_meta v2.9.4
+   Compiling xz2 v0.1.7
+   Compiling pest_generator v2.9.4
+   Compiling zstd-safe v7.3.0
+   Compiling pest_derive v2.9.4
+   Compiling zstd v0.13.3
+   Compiling py_literal v0.4.0
+   Compiling zip v2.5.0
+   Compiling calamine v0.26.1
+   Compiling npyz v0.8.4
+   Compiling faer v0.24.4
+   Compiling rs-wgcna v0.5.0 (/Users/shawn/Sync-Document/wgcna/rs_WGCNA)
+warning: variable does not need to be mutable
+   --> src/cutree.rs:193:17
+    |
+193 |             let mut do_merge: bool;
+    |                 ----^^^^^^^^
+    |                 |
+    |                 help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/cutree.rs:194:17
+    |
+194 |             let mut smaller_fail_size: bool;
+    |                 ----^^^^^^^^^^^^^^^^^
+    |                 |
+    |                 help: remove this `mut`
+
+warning: variable `root_branch` is assigned to, but never used
+   --> src/cutree.rs:124:9
+    |
+124 |     let mut root_branch = 0usize;
+    |         ^^^^^^^^^^^^^^^
+    |
+    = note: consider using `_root_branch` instead
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `unlabeled_exist`
+   --> src/cutree.rs:488:9
+    |
+488 |     let unlabeled_exist = colors[1..].iter().any(|&c| c == 0);
+    |         ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_unlabeled_exist`
+
+warning: value assigned to `root_branch` is never read
+   --> src/cutree.rs:284:21
+    |
+268 |                     root_branch = n_branches;
+    |                     ------------------------ `root_branch` is overwritten here before the previous value is read
+...
+284 |                     root_branch = large;
+    |                     ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+    |
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `root_branch` is never read
+   --> src/cutree.rs:268:21
+    |
+242 |                 root_branch = large;
+    |                 ------------------- `root_branch` is overwritten here before the previous value is read
+...
+268 |                     root_branch = n_branches;
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+
+warning: value assigned to `root_branch` is never read
+   --> src/cutree.rs:242:17
+    |
+159 |             root_branch = clust;
+    |             ------------------- `root_branch` is overwritten here before the previous value is read
+...
+242 |                 root_branch = large;
+    |                 ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+
+warning: value assigned to `root_branch` is never read
+   --> src/cutree.rs:159:13
+    |
+139 |             root_branch = n_branches;
+    |             ------------------------ `root_branch` is overwritten here before the previous value is read
+...
+159 |             root_branch = clust;
+    |             ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+
+warning: value assigned to `root_branch` is never read
+   --> src/cutree.rs:139:13
+    |
+139 |             root_branch = n_branches;
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: function `rank_first` is never used
+  --> src/cutree.rs:54:4
+   |
+54 | fn rank_first(x: &[f64]) -> Vec<usize> {
+   |    ^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `rs-wgcna` (lib test) generated 10 warnings (10 duplicates)
+warning: `rs-wgcna` (lib) generated 10 warnings (run `cargo fix --lib -p rs-wgcna` to apply 3 suggestions)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 42.48s
+     Running unittests src/lib.rs (target/debug/deps/rs_wgcna-1d4b3c388a1a9b56)
+
+running 14 tests
+test clustering::tests::cmeans_finds_two_clusters ... ok
+test filter::tests::median_even_odd ... ok
+test sft::tests::simple_lm_slope_r2 ... ok
+test filter::tests::low_expression_mask_keeps_and_removes ... ok
+test filter::tests::variance_known ... ok
+test hclust::tests::three_points_average ... ok
+test hclust::tests::two_points ... ok
+test pipeline::tests::reassignment_excludes_deleted_module_eigengenes ... ok
+test pipeline::tests::reassignment_uses_supplied_dynamic_eigengenes ... ok
+test sft::tests::connectivity_diag_one ... ok
+test stats::tests::pearson_negative ... ok
+test stats::tests::pearson_simple ... ok
+test stats::tests::pvalue_monotonic ... ok
+test stats::tests::pvalue_perfect ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/rs_wgcna-68415e4aae4df622)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/bin/worker.rs (target/debug/deps/rs_wgcna_worker-40d40f5ff2737e56)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/audit_numeric_contract.rs (target/debug/deps/audit_numeric_contract-dad98652842a45ad)
+
+running 5 tests
+test correlation_pvalue_endpoints_match_reference ... ok
+test audit_near_zero_student_pvalue_matches_reference ... ok
+test audit_fractional_tom_none_matches_reference ... ok
+test audit_fractional_adjacency_matches_reference ... ok
+test audit_signed_nowick2_unsigned_network_matches_reference ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/trait_alignment.rs (target/debug/deps/trait_alignment-1591a5a35c65255c)
+
+running 3 tests
+test align_trait_rows_by_sample_id ... ok
+test reject_ambiguous_or_different_sample_sets ... ok
+test reject_missing_and_extra_trait_cells ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rs_wgcna
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

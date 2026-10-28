@@ -1,0 +1,53 @@
+case,network,TOM,denominator,power,deepSplit,mergeCutHeight,fixture,status,before_status
+0,unsigned,unsigned,min,6,2,0.15,standard,PASS,PASS
+1,unsigned,unsigned,mean,6,2,0.15,standard,PASS,PASS
+2,unsigned,signed,min,6,2,0.15,standard,PASS,PASS
+3,unsigned,signed,mean,6,2,0.15,standard,PASS,PASS
+4,unsigned,signed Nowick,min,6,2,0.15,standard,PASS,PASS
+5,unsigned,signed Nowick,mean,6,2,0.15,standard,PASS,PASS
+6,unsigned,unsigned 2,min,6,2,0.15,standard,PASS,PASS
+7,unsigned,unsigned 2,mean,6,2,0.15,standard,PASS,PASS
+8,unsigned,signed 2,min,6,2,0.15,standard,PASS,PASS
+9,unsigned,signed 2,mean,6,2,0.15,standard,PASS,PASS
+10,unsigned,signed Nowick 2,min,6,2,0.15,standard,PASS,FAIL
+11,unsigned,signed Nowick 2,mean,6,2,0.15,standard,PASS,FAIL
+12,signed,unsigned,min,6,2,0.15,standard,PASS,PASS
+13,signed,unsigned,mean,6,2,0.15,standard,PASS,PASS
+14,signed,signed,min,6,2,0.15,standard,PASS,PASS
+15,signed,signed,mean,6,2,0.15,standard,PASS,PASS
+16,signed,signed Nowick,min,6,2,0.15,standard,PASS,PASS
+17,signed,signed Nowick,mean,6,2,0.15,standard,PASS,PASS
+18,signed,unsigned 2,min,6,2,0.15,standard,PASS,PASS
+19,signed,unsigned 2,mean,6,2,0.15,standard,PASS,PASS
+20,signed,signed 2,min,6,2,0.15,standard,PASS,PASS
+21,signed,signed 2,mean,6,2,0.15,standard,PASS,PASS
+22,signed,signed Nowick 2,min,6,2,0.15,standard,PASS,FAIL
+23,signed,signed Nowick 2,mean,6,2,0.15,standard,PASS,FAIL
+24,signed hybrid,unsigned,min,6,2,0.15,standard,PASS,PASS
+25,signed hybrid,unsigned,mean,6,2,0.15,standard,PASS,PASS
+26,signed hybrid,signed,min,6,2,0.15,standard,PASS,PASS
+27,signed hybrid,signed,mean,6,2,0.15,standard,PASS,PASS
+28,signed hybrid,signed Nowick,min,6,2,0.15,standard,PASS,PASS
+29,signed hybrid,signed Nowick,mean,6,2,0.15,standard,PASS,PASS
+30,signed hybrid,unsigned 2,min,6,2,0.15,standard,PASS,PASS
+31,signed hybrid,unsigned 2,mean,6,2,0.15,standard,PASS,PASS
+32,signed hybrid,signed 2,min,6,2,0.15,standard,PASS,PASS
+33,signed hybrid,signed 2,mean,6,2,0.15,standard,PASS,PASS
+34,signed hybrid,signed Nowick 2,min,6,2,0.15,standard,PASS,FAIL
+35,signed hybrid,signed Nowick 2,mean,6,2,0.15,standard,PASS,FAIL
+36,unsigned,signed,min,1,2,0.15,standard,PASS,PASS
+37,unsigned,signed,min,12,2,0.15,standard,PASS,PASS
+38,unsigned,signed,min,2.5,2,0.15,standard,PASS,FAIL
+39,unsigned,signed,min,6,0,0,challenging,PASS,PASS
+40,unsigned,signed,min,6,0,0.25,challenging,PASS,PASS
+41,unsigned,signed,min,6,0,0.5,challenging,PASS,PASS
+42,unsigned,signed,min,6,1,0,challenging,PASS,PASS
+43,unsigned,signed,min,6,1,0.25,challenging,PASS,PASS
+44,unsigned,signed,min,6,1,0.5,challenging,PASS,PASS
+45,unsigned,signed,min,6,3,0,challenging,PASS,PASS
+46,unsigned,signed,min,6,3,0.25,challenging,PASS,PASS
+47,unsigned,signed,min,6,3,0.5,challenging,PASS,PASS
+48,unsigned,signed,min,6,4,0,challenging,PASS,PASS
+49,unsigned,signed,min,6,4,0.25,challenging,PASS,PASS
+50,unsigned,signed,min,6,4,0.5,challenging,PASS,PASS
+51,unsigned,none,min,6,2,0.15,standard,PASS,PASS

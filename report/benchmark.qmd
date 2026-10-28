@@ -1,150 +1,104 @@
 ---
-title: "rs-WGCNA vs R WGCNA 基准测试报告"
-subtitle: "真实数据集：乳腺癌 RNA-seq（FPKM，36953 基因 × 56 样本）"
+title: "rs-WGCNA / R WGCNA 科学一致性审计与修复复测"
+subtitle: "修复前后分别读取结果文件；历史报告单独保留"
 format: html
 embed-resources: true
 lang: zh
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_knit$set(root.dir = normalizePath(".."))
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+audit <- file.path(normalizePath(".."), "validation/audit")
+required <- c("parity_summary.csv","parity_details.csv","parameter_coverage.csv","benchmark_summary.csv","test_counts.csv")
+stopifnot(all(file.exists(file.path(audit,required))))
+summary <- read.csv(file.path(audit,"parity_summary.csv"),check.names=FALSE)
+details <- read.csv(file.path(audit,"parity_details.csv"),check.names=FALSE)
 ```
 
-## 1. 概述
+科学审计、实现修复、回归测试和报告由 **OpenAI Codex（ChatGPT）** 完成。
 
-本报告在**真实转录组数据**上对比纯 Rust 实现的 WGCNA 内核（**rs-WGCNA**）与 R 版
-`WGCNA` 包，验证两点：
+## 修复后复测
 
-1. **结果一致性**：两者是否给出相同的模块划分；
-2. **性能**：在相同算力下，rs-WGCNA 是否显著提速（R 使用默认 reference-BLAS）。
-
-rs-WGCNA 使用纯 Rust 线性代数库 `faer`（多线程 SIMD），**不依赖系统 BLAS**，端上零配置。
-
-## 2. 数据与方法
-
-**数据**：乳腺癌 RNA-seq 表达矩阵（FPKM），36953 个基因 × 56 个样本，5 个分子亚型。
+本节读取 `validation/fixes/`，与后面的修复前审计证据分开。修复已涉及生产算法和
+样本对齐，默认科学参数与 `1e-9` 容差保持不变。旧 HTML 与旧审计输出保留。
 
 ```{r}
-#| echo: false
-trait_counts <- table(colnames(read.table("Demo/WGCNA_data_trait.txt", header=TRUE, row.names=1, check.names=FALSE)))
-knitr::kable(data.frame(亚型=names(trait_counts), 样本数=as.integer(trait_counts)), format="pipe")
-```
-
-**预处理**（两端一致）：`log10(x+1)` 归一化 → 按 MAD 取 top 8000 基因。
-
-**WGCNA 参数**（两端一致）：
-
-```{r}
-#| echo: false
-params <- data.frame(
-  参数=c("power","networkType","TOMType","TOMDenom","minModuleSize","mergeCutHeight","deepSplit","detectCutHeight"),
-  取值=c("6","unsigned","signed","min","30","0.25","2","0.995"))
-knitr::kable(params, format="pipe")
-```
-
-**运行环境**：Apple M2（8 核）；rs-WGCNA 用 faer 8 线程，R 用默认
-`libRblas`（reference BLAS，单线程）。
-
-## 3. 结果一致性（Parity）
-
-```{r}
-#| echo: false
-r_genes <- readLines("bench_out/r/filtered_genes.txt")
-rust_genes <- readLines("bench_out/rust/filtered_genes.txt")
-r_col <- read.table("bench_out/r/module_colors.txt", header=FALSE, col.names=c("gene","color"), stringsAsFactors=FALSE)
-rust_col <- read.table("bench_out/rust/module_colors.txt", header=FALSE, col.names=c("gene","color"), stringsAsFactors=FALSE)
-n_ident <- sum(r_col$color == rust_col$color)
-
-parity <- data.frame(
-  检查项 = c("过滤后基因集（MAD top 8000）", "动态切树 cutreeDynamic 标签", "最终模块颜色分配"),
-  结果 = c(
-    ifelse(identical(r_genes, rust_genes), "100% 一致", "不一致"),
-    "100% 一致（8000/8000）",
-    sprintf("%d/8000（%.2f%%）", n_ident, 100*n_ident/nrow(r_col))))
-knitr::kable(parity, format="pipe")
-```
-
-## 4. 模块检测结果
-
-最终得到 **6 个共表达模块 + 1 个 grey（未分配）模块**：
-
-```{r}
-#| echo: false
-sizes <- sort(table(r_col$color), decreasing=TRUE)
-knitr::kable(data.frame(模块=names(sizes), 基因数=as.integer(sizes)), format="pipe")
-```
-
-**模块-性状关联**（模块 eigengene 与亚型的 Pearson 相关）：
-
-```{r}
-#| echo: false
-#| fig-width: 7
-#| fig-height: 3.2
-mt <- as.matrix(read.table("bench_out/rust/module_trait_cor.tsv", header=TRUE, row.names=1, check.names=FALSE))
-pal <- colorRampPalette(c("#4575b4","white","#d73027"))(100)
-breaks <- seq(-1, 1, length.out=101)
-cols <- matrix(pal[findInterval(as.vector(mt), breaks)], nrow=nrow(mt))
-par(mar=c(5,5,1,1))
-plot(NA, xlim=c(0.5, ncol(mt)+0.5), ylim=c(0.5, nrow(mt)+0.5),
-     xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
-for (i in 1:nrow(mt)) for (j in 1:ncol(mt)) {
-  rect(j-0.5, i-0.5, j+0.5, i+0.5, col=cols[i,j], border="white")
-  text(j, i, sprintf("%.2f", mt[i,j]), cex=0.85)
+#| results: asis
+fixed <- file.path(normalizePath(".."), "validation/fixes")
+fix_files <- c("test_counts.csv", "module_summary.csv", "parameter_coverage.csv")
+if (all(file.exists(file.path(fixed, fix_files)))) {
+  print(knitr::kable(read.csv(file.path(fixed,"test_counts.csv"))))
+  cat("\n\n")
+  print(knitr::kable(read.csv(file.path(fixed,"module_summary.csv"))))
+  cat("\n\n")
+  coverage <- read.csv(file.path(fixed,"parameter_coverage.csv"))
+  print(knitr::kable(as.data.frame(table(coverage$status)),col.names=c("参数配置状态","数量")))
+  cat("\n\n")
+  print(knitr::kable(read.csv(file.path(fixed,"artifacts/stats_grid/parity_details.csv")),digits=12))
+  cat("\n\n")
+} else {
+  cat("NOT EXECUTED：修复复测结果尚不完整，不计为通过。")
 }
-axis(1, at=1:ncol(mt), labels=colnames(mt), las=2, tick=FALSE)
-axis(2, at=1:nrow(mt), labels=rownames(mt), las=2, tick=FALSE)
 ```
 
-- **blue 模块** 与 **Luminal 亚型** 强正相关（r = 0.91，p < 1e-10）；
-- **brown 模块** 与 **Basal**（r = 0.51）及 **Non_malignant**（r = 0.51）正相关。
+修复过程、精确命令、完整误差和覆盖限制见
+[中文报告](../validation/fixes/FIX_VERIFICATION.zh-CN.md) /
+[English report](../validation/fixes/FIX_VERIFICATION.md)。
+大数据 cor/TOM 仍仅验证探针；本轮没有重新做性能重复实验。
 
-## 5. 性能基准
+## 修复前审计：范围与判据
+
+修复前审计保留 Rust 生产源代码、算法和默认参数。连续量以绝对误差 `1e-9` 判定；
+相对误差只作诊断，分母为 `max(abs(R参考值), 1e-12)`。缺少必需文件、ID 不匹配、
+重复 ID 和非有限数值均失败。最终颜色名称的一致率与不依赖颜色命名的 ARI 分开报告。
+`NOT EXECUTED`、`SKIPPED` 和 `NOT SUPPORTED` 均不计作通过。
+
+## 修复前审计：实测状态
 
 ```{r}
-#| echo: false
-rt <- read.table("bench_out/r/timings.tsv", header=TRUE)
-rustt <- read.table("bench_out/rust/timings.tsv", header=TRUE)
-m <- merge(rt, rustt, by="step", suffixes=c("_R","_Rust"))
-m$speedup <- m$seconds_R / m$seconds_Rust
-m$step <- factor(m$step, levels=c("log10_normalize","mad_topN","cor","tom","module_detection_total","module_trait"),
-                 labels=c("log10 归一化","MAD top 8000","相关矩阵 cor","TOM","模块检测(总)","模块-性状"))
-knitr::kable(data.frame(步骤=m$step, R秒=round(m$seconds_R,3), Rust秒=round(m$seconds_Rust,3), 加速=round(m$speedup,1)), format="pipe")
+knitr::kable(read.csv(file.path(audit,"test_counts.csv")))
+knitr::kable(summary)
 ```
 
-端到端（预处理 + 完整 WGCNA 管线）总耗时：
+这里的每一项来自结果文件。历史 `bench_out/` 与原有 `benchmark.html` 保留，
+不作为当前提交的自动验证证据。原报告曾固定写入的“动态切树 100%”结论已取消；
+当前切树结果只在存在相应导出证据时列出。
+
+## 修复前审计：参数覆盖
 
 ```{r}
-#| echo: false
-# 端到端不重复计入 cor/tom（它们是 module_detection_total 的子步骤）
-non_overlap <- c("log10_normalize", "mad_topN", "module_detection_total", "module_trait")
-total_R <- sum(rt$seconds[match(non_overlap, rt$step)])
-total_Rust <- sum(rustt$seconds[match(non_overlap, rustt$step)])
-cat(sprintf("**R 端到端 %.1f 秒 vs rs-WGCNA 端到端 %.1f 秒，整体加速 %.1f 倍**。",
-    total_R, total_Rust, total_R/total_Rust))
+knitr::kable(read.csv(file.path(audit,"parameter_coverage.csv")))
 ```
+
+## 修复前审计：连续量误差
 
 ```{r}
-#| echo: false
-#| fig-width: 7
-#| fig-height: 3.2
-steps <- c("log10","MAD","cor","TOM","模块检测","模块-性状")
-r_sec <- c(rt$seconds[match(c("log10_normalize","mad_topN","cor","tom","module_detection_total","module_trait"), rt$step)])
-rust_sec <- c(rustt$seconds[match(c("log10_normalize","mad_topN","cor","tom","module_detection_total","module_trait"), rustt$step)])
-mat <- rbind(R=r_sec, Rust=rust_sec)
-par(mar=c(5,4,2,1))
-barplot(mat, beside=TRUE, col=c("#9ecae1","#3182bd"), names.arg=steps, las=1,
-        ylab="秒（对数刻度）", log="y", legend.text=c("R (reference-BLAS)","rs-WGCNA (faer)"),
-        args.legend=list(x="topleft", bty="n"))
+finite <- details[!is.na(details$max_abs),]
+if(nrow(finite)>0) {
+  groups <- split(finite,finite$metric)
+  tab <- do.call(rbind,lapply(groups,function(x)data.frame(metric=x$metric[1],comparisons=nrow(x),max_abs=max(x$max_abs),max_rmse=max(x$rmse),failed=sum(x$status=="FAIL"))))
+  knitr::kable(tab,digits=12)
+}
 ```
 
-关键瓶颈 **TOM**（拓扑重叠矩阵，O(G³)）：R 用单线程 reference-BLAS 耗时 ~110 秒，
-rs-WGCNA 用 faer 多线程耗时 ~6.8 秒，**加速约 16 倍**。
+同一汇总中可能包括已知失败配置；具体数据集与参数见 `parity_details.csv`。
+真实数据原基准的 Rust 模块–性状输出仅保留六位小数，无法用来证明机器精度。
+带额外探针与中间状态的诊断运行单独记录，不用于性能结论。
 
-## 6. 结论
+## 修复前审计：性能
 
-1. **结果完全一致**：过滤、动态切树、最终模块颜色分配在 8000 个基因上**逐位一致（100%）**，
-   证明 rs-WGCNA 是对 R WGCNA 的忠实、数值等价的重实现。
-2. **显著提速**：端到端约 **10 倍**，核心 TOM 步骤约 **16 倍**，且规模越大差距越大。
-3. rs-WGCNA 以纯 Rust（faer）实现，**无需用户配置 BLAS**，直接解决了"普通用户不改 BLAS
-   导致矩阵计算慢"的痛点。
+```{r}
+knitr::kable(read.csv(file.path(audit,"benchmark_summary.csv")))
+```
+
+Scenario A 使用原有默认环境（R reference BLAS / Rust faer 默认可用线程）；
+Scenario B 只有在加载并验证本地优化 BLAS 后才报告，并显式控制线程数。
+计时区间沿用原基准；端到端和仅包含读取/预处理、模块检测与性状关联，避免重复加入
+单独测量的 cor/TOM。任何并行审计负载、仅一次测量和内存测量缺失均在详细 Markdown
+报告中注明。这些是环境相关的实现耗时，不能据此声称纯算法加速比。
+
+## 修复前审计：可复核材料
+
+完整解释、失败项、差异基因调查和限制见
+[SCIENTIFIC_PARITY_AUDIT.md](../validation/audit/SCIENTIFIC_PARITY_AUDIT.md)。
+所有结论以生成的 CSV/TSV、精确命令和退出码为依据；不从历史手填值推断通过。

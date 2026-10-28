@@ -1,0 +1,6 @@
+group,PASS,FAIL,SKIPPED
+cargo tests,22,0,0
+parameter configurations,52,0,0
+validator controls,15,0,0
+all exported comparisons,664,0,0
+real final module comparisons,2,0,0

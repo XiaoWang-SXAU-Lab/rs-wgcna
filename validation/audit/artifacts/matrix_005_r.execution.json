@@ -1,0 +1,8 @@
+{
+  "name": "matrix_005_r",
+  "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_005/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed Nowick' mean 2 0.15",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 3.0149121284484863,
+  "log": "artifacts/matrix_005_r.log"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "build_reassignment_retry",
+  "command": "cargo build --release --example audit_reassignment",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 1.5752859115600586,
+  "log": "artifacts/build_reassignment_retry.log"
+}

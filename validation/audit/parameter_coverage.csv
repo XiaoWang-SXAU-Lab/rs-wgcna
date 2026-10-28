@@ -1,0 +1,53 @@
+case,network,TOM,denominator,power,deepSplit,mergeCutHeight,fixture,status
+0,unsigned,unsigned,min,6,2,0.15,standard,PASS
+1,unsigned,unsigned,mean,6,2,0.15,standard,PASS
+2,unsigned,signed,min,6,2,0.15,standard,PASS
+3,unsigned,signed,mean,6,2,0.15,standard,PASS
+4,unsigned,signed Nowick,min,6,2,0.15,standard,PASS
+5,unsigned,signed Nowick,mean,6,2,0.15,standard,PASS
+6,unsigned,unsigned 2,min,6,2,0.15,standard,PASS
+7,unsigned,unsigned 2,mean,6,2,0.15,standard,PASS
+8,unsigned,signed 2,min,6,2,0.15,standard,PASS
+9,unsigned,signed 2,mean,6,2,0.15,standard,PASS
+10,unsigned,signed Nowick 2,min,6,2,0.15,standard,FAIL
+11,unsigned,signed Nowick 2,mean,6,2,0.15,standard,FAIL
+12,signed,unsigned,min,6,2,0.15,standard,PASS
+13,signed,unsigned,mean,6,2,0.15,standard,PASS
+14,signed,signed,min,6,2,0.15,standard,PASS
+15,signed,signed,mean,6,2,0.15,standard,PASS
+16,signed,signed Nowick,min,6,2,0.15,standard,PASS
+17,signed,signed Nowick,mean,6,2,0.15,standard,PASS
+18,signed,unsigned 2,min,6,2,0.15,standard,PASS
+19,signed,unsigned 2,mean,6,2,0.15,standard,PASS
+20,signed,signed 2,min,6,2,0.15,standard,PASS
+21,signed,signed 2,mean,6,2,0.15,standard,PASS
+22,signed,signed Nowick 2,min,6,2,0.15,standard,FAIL
+23,signed,signed Nowick 2,mean,6,2,0.15,standard,FAIL
+24,signed hybrid,unsigned,min,6,2,0.15,standard,PASS
+25,signed hybrid,unsigned,mean,6,2,0.15,standard,PASS
+26,signed hybrid,signed,min,6,2,0.15,standard,PASS
+27,signed hybrid,signed,mean,6,2,0.15,standard,PASS
+28,signed hybrid,signed Nowick,min,6,2,0.15,standard,PASS
+29,signed hybrid,signed Nowick,mean,6,2,0.15,standard,PASS
+30,signed hybrid,unsigned 2,min,6,2,0.15,standard,PASS
+31,signed hybrid,unsigned 2,mean,6,2,0.15,standard,PASS
+32,signed hybrid,signed 2,min,6,2,0.15,standard,PASS
+33,signed hybrid,signed 2,mean,6,2,0.15,standard,PASS
+34,signed hybrid,signed Nowick 2,min,6,2,0.15,standard,FAIL
+35,signed hybrid,signed Nowick 2,mean,6,2,0.15,standard,FAIL
+36,unsigned,signed,min,1,2,0.15,standard,PASS
+37,unsigned,signed,min,12,2,0.15,standard,PASS
+38,unsigned,signed,min,2.5,2,0.15,standard,FAIL
+39,unsigned,signed,min,6,0,0,challenging,PASS
+40,unsigned,signed,min,6,0,0.25,challenging,PASS
+41,unsigned,signed,min,6,0,0.5,challenging,PASS
+42,unsigned,signed,min,6,1,0,challenging,PASS
+43,unsigned,signed,min,6,1,0.25,challenging,PASS
+44,unsigned,signed,min,6,1,0.5,challenging,PASS
+45,unsigned,signed,min,6,3,0,challenging,PASS
+46,unsigned,signed,min,6,3,0.25,challenging,PASS
+47,unsigned,signed,min,6,3,0.5,challenging,PASS
+48,unsigned,signed,min,6,4,0,challenging,PASS
+49,unsigned,signed,min,6,4,0.25,challenging,PASS
+50,unsigned,signed,min,6,4,0.5,challenging,PASS
+51,unsigned,none,min,6,2,0.15,standard,PASS

@@ -1,0 +1,8 @@
+{
+  "name": "perfB_8000_rust_1",
+  "command": "AUDIT_THREADS=8 RAYON_NUM_THREADS=8 target/release/examples/audit_perf Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_rust_1 8000",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 16.83448100090027,
+  "log": "artifacts/perfB_8000_rust_1.log"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "diagnostic_8000_compare_verified",
+  "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_8000_rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_8000_r /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_8000_comparison",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 1,
+  "seconds": 22.19164204597473,
+  "log": "artifacts/diagnostic_8000_compare_verified.log"
+}

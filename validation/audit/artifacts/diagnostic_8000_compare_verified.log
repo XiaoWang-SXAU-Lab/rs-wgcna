@@ -1,0 +1,46 @@
+  total exact_agreement disagreeing ARI gene_order_identical status
+1  8000               1           0   1                 TRUE   PASS
+                                   metric status
+module_trait_cor.tsv module_trait_cor.tsv   PASS
+module_trait_p.tsv     module_trait_p.tsv   FAIL
+cor_probe.tsv               cor_probe.tsv   PASS
+tom_probe.tsv               tom_probe.tsv   PASS
+sft.tsv                           sft.tsv   PASS
+tree.tsv                         tree.tsv   PASS
+dynamic.tsv                   dynamic.tsv   PASS
+eigengenes.tsv             eigengenes.tsv   PASS
+kme.tsv                           kme.tsv   PASS
+intramodular.tsv         intramodular.tsv   PASS
+                                                                                                                       reason
+module_trait_cor.tsv R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate
+module_trait_p.tsv   R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate
+cor_probe.tsv                                                                                                                
+tom_probe.tsv                                                                                                                
+sft.tsv                                                                                                                      
+tree.tsv                                                                                                                     
+dynamic.tsv                                                                                                                  
+eigengenes.tsv       R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate
+kme.tsv              R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate
+intramodular.tsv                                                                                                             
+                      total      max_abs     mean_abs         rmse max_relative
+module_trait_cor.tsv     30 8.354428e-15 1.853726e-15 2.708910e-15 1.254346e-13
+module_trait_p.tsv       30 4.101612e-08 1.367749e-09 7.488485e-09 4.664851e-08
+cor_probe.tsv        512000 5.428991e-14 1.142174e-15 2.445211e-15 6.966434e-11
+tom_probe.tsv        512000 4.715672e-14 4.308130e-16 1.490283e-15 6.397089e-09
+sft.tsv                  90 5.047696e-11 5.403680e-12 1.380097e-11 4.340375e-13
+tree.tsv              23997 4.185541e-14 3.729011e-16 1.223963e-15 4.797700e-14
+dynamic.tsv            8000 0.000000e+00 0.000000e+00 0.000000e+00 0.000000e+00
+eigengenes.tsv          336 5.729792e-15 6.937036e-16 1.019292e-15 2.660853e-11
+kme.tsv               48000 5.073719e-14 1.902378e-15 2.942761e-15 1.422512e-10
+intramodular.tsv       8000 6.104983e-11 1.080139e-12 3.490570e-12 4.400099e-13
+                     above_tolerance proportion_above tolerance
+module_trait_cor.tsv               0       0.00000000     1e-09
+module_trait_p.tsv                 1       0.03333333     1e-09
+cor_probe.tsv                      0       0.00000000     1e-09
+tom_probe.tsv                      0       0.00000000     1e-09
+sft.tsv                            0       0.00000000     1e-09
+tree.tsv                           0       0.00000000     1e-09
+dynamic.tsv                        0       0.00000000     1e-09
+eigengenes.tsv                     0       0.00000000     1e-09
+kme.tsv                            0       0.00000000     1e-09
+intramodular.tsv                   0       0.00000000     1e-09

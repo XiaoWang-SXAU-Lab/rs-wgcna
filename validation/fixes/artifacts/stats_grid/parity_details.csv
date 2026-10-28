@@ -1,0 +1,3 @@
+"metric","status","total","max_abs","mean_abs","rmse","max_relative","above_tolerance","proportion_above","tolerance"
+"student","PASS",252,2.30594709993426e-12,2.18335486266528e-13,4.80014529416613e-13,2.73204570228338e-05,0,0,1e-09
+"fisher","PASS",252,1.73107361778335e-12,1.8236716256901e-13,4.33714943321098e-13,3.93154954816312e-06,0,0,1e-09

@@ -1,0 +1,8 @@
+{
+  "name": "generate_challenging",
+  "command": "Rscript -e 'x<-read.delim(\"validation/audit/artifacts/baseline/testdata/expr.tsv\",check.names=FALSE); set.seed(20261028); x[2:10,-1]<- -as.matrix(x[2:10,-1]); x[140:150,-1]<-as.matrix(x[140:150,-1])*.2+matrix(rnorm(11*40),11); write.table(x,\"validation/audit/artifacts/challenging.tsv\",sep=\"\\t\",quote=FALSE,row.names=FALSE)'",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 0.1602470874786377,
+  "log": "artifacts/generate_challenging.log"
+}

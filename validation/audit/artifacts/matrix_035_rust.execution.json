@@ -1,0 +1,8 @@
+{
+  "name": "matrix_035_rust",
+  "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_035/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed Nowick 2' mean 2 0.15",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 0.22618603706359863,
+  "log": "artifacts/matrix_035_rust.log"
+}

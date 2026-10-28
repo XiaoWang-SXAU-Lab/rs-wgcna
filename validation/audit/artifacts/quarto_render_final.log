@@ -1,0 +1,56 @@
+
+
+processing file: benchmark.qmd
+1/11                  
+2/11 [setup]          
+3/11                  
+4/11 [unnamed-chunk-1]
+5/11                  
+6/11 [unnamed-chunk-2]
+7/11                  
+8/11 [unnamed-chunk-3]
+9/11                  
+10/11 [unnamed-chunk-4]
+11/11                  
+output file: benchmark.knit.md
+
+pandoc --output ../benchmark-audit.html
+  to: html
+  standalone: true
+  embed-resources: true
+  section-divs: true
+  html-math-method: mathjax
+  wrap: none
+  default-image-extension: png
+  
+metadata
+  document-css: false
+  link-citations: true
+  date-format: long
+  lang: zh
+  title: rs-WGCNA / R WGCNA 科学一致性审计
+  subtitle: 由 validation/audit 生成的结果；历史报告单独保留
+  
+ERROR: NotFound: No such file or directory (os error 2): readfile '/Users/shawn/Sync-Document/wgcna/rs_WGCNA/benchmark_files/libs/quarto-html/quarto.js'
+Path: /Users/shawn/Sync-Document/wgcna/rs_WGCNA/benchmark_files/libs/quarto-html/quarto.js
+
+Stack trace:
+    at readTextFileSync (ext:deno_fs/30_fs.js:800:10)
+    at Object.Deno.readTextFileSync (file:///Users/shawn/.local/quarto/bin/quarto.js:98727:21)
+    at bundleModules (file:///Users/shawn/.local/quarto/bin/quarto.js:131052:14)
+    at pandocIngestSelfContainedContent (file:///Users/shawn/.local/quarto/bin/quarto.js:131074:9)
+    at async file:///Users/shawn/.local/quarto/bin/quarto.js:131274:11
+    at async withTimingAsync (file:///Users/shawn/.local/quarto/bin/quarto.js:15995:21)
+    at async Object.complete (file:///Users/shawn/.local/quarto/bin/quarto.js:131265:7)
+    at async Object.onPostProcess (file:///Users/shawn/.local/quarto/bin/quarto.js:137299:28)
+    at async renderFileInternal (file:///Users/shawn/.local/quarto/bin/quarto.js:137283:3)
+    at async renderFiles (file:///Users/shawn/.local/quarto/bin/quarto.js:136987:9)
+    at async render (file:///Users/shawn/.local/quarto/bin/quarto.js:142656:19)
+    at async _Command.actionHandler (file:///Users/shawn/.local/quarto/bin/quarto.js:142901:24)
+    at async _Command.execute (file:///Users/shawn/.local/quarto/bin/quarto.js:102249:7)
+    at async _Command.parseCommand (file:///Users/shawn/.local/quarto/bin/quarto.js:102126:14)
+    at async quarto4 (file:///Users/shawn/.local/quarto/bin/quarto.js:188304:5)
+    at async file:///Users/shawn/.local/quarto/bin/quarto.js:188333:5
+    at async file:///Users/shawn/.local/quarto/bin/quarto.js:188187:14
+    at async mainRunner (file:///Users/shawn/.local/quarto/bin/quarto.js:188189:5)
+    at async file:///Users/shawn/.local/quarto/bin/quarto.js:188326:3

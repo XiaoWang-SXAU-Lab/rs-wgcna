@@ -1,0 +1,13 @@
+ M report/benchmark.qmd
+ M scripts/compare.R
+ M scripts/r_reference.R
+ M scripts/run_parity.sh
+?? examples/audit_matrix.rs
+?? examples/audit_perf.rs
+?? examples/audit_real.rs
+?? examples/audit_reassignment.rs
+?? examples/audit_stats.rs
+?? report/benchmark-audit.html
+?? scripts/audit_real_reference.R
+?? tests/
+?? validation/

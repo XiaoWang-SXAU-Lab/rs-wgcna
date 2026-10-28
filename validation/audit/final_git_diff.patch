@@ -1,0 +1,2052 @@
+diff --git a/report/benchmark.qmd b/report/benchmark.qmd
+index a8c172f..6e026ba 100644
+--- a/report/benchmark.qmd
++++ b/report/benchmark.qmd
+@@ -1,150 +1,73 @@
+ ---
+-title: "rs-WGCNA vs R WGCNA 基准测试报告"
+-subtitle: "真实数据集：乳腺癌 RNA-seq（FPKM，36953 基因 × 56 样本）"
++title: "rs-WGCNA / R WGCNA 科学一致性审计"
++subtitle: "由 validation/audit 生成的结果；历史报告单独保留"
+ format: html
+ embed-resources: true
+ lang: zh
+ ---
+ 
+ ```{r setup, include=FALSE}
+-knitr::opts_knit$set(root.dir = normalizePath(".."))
+-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
++knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
++audit <- file.path(normalizePath(".."), "validation/audit")
++required <- c("parity_summary.csv","parity_details.csv","parameter_coverage.csv","benchmark_summary.csv","test_counts.csv")
++stopifnot(all(file.exists(file.path(audit,required))))
++summary <- read.csv(file.path(audit,"parity_summary.csv"),check.names=FALSE)
++details <- read.csv(file.path(audit,"parity_details.csv"),check.names=FALSE)
+ ```
+ 
+-## 1. 概述
++## 范围与判据
+ 
+-本报告在**真实转录组数据**上对比纯 Rust 实现的 WGCNA 内核（**rs-WGCNA**）与 R 版
+-`WGCNA` 包，验证两点：
++本次审计保留 Rust 生产源代码、算法和默认参数。连续量以绝对误差 `1e-9` 判定；
++相对误差只作诊断，分母为 `max(abs(R参考值), 1e-12)`。缺少必需文件、ID 不匹配、
++重复 ID 和非有限数值均失败。最终颜色名称的一致率与不依赖颜色命名的 ARI 分开报告。
++`NOT EXECUTED`、`SKIPPED` 和 `NOT SUPPORTED` 均不计作通过。
+ 
+-1. **结果一致性**：两者是否给出相同的模块划分；
+-2. **性能**：在相同算力下，rs-WGCNA 是否显著提速（R 使用默认 reference-BLAS）。
+-
+-rs-WGCNA 使用纯 Rust 线性代数库 `faer`（多线程 SIMD），**不依赖系统 BLAS**，端上零配置。
+-
+-## 2. 数据与方法
+-
+-**数据**：乳腺癌 RNA-seq 表达矩阵（FPKM），36953 个基因 × 56 个样本，5 个分子亚型。
+-
+-```{r}
+-#| echo: false
+-trait_counts <- table(colnames(read.table("Demo/WGCNA_data_trait.txt", header=TRUE, row.names=1, check.names=FALSE)))
+-knitr::kable(data.frame(亚型=names(trait_counts), 样本数=as.integer(trait_counts)), format="pipe")
+-```
+-
+-**预处理**（两端一致）：`log10(x+1)` 归一化 → 按 MAD 取 top 8000 基因。
+-
+-**WGCNA 参数**（两端一致）：
+-
+-```{r}
+-#| echo: false
+-params <- data.frame(
+-  参数=c("power","networkType","TOMType","TOMDenom","minModuleSize","mergeCutHeight","deepSplit","detectCutHeight"),
+-  取值=c("6","unsigned","signed","min","30","0.25","2","0.995"))
+-knitr::kable(params, format="pipe")
+-```
+-
+-**运行环境**：Apple M2（8 核）；rs-WGCNA 用 faer 8 线程，R 用默认
+-`libRblas`（reference BLAS，单线程）。
+-
+-## 3. 结果一致性（Parity）
++## 实测状态
+ 
+ ```{r}
+-#| echo: false
+-r_genes <- readLines("bench_out/r/filtered_genes.txt")
+-rust_genes <- readLines("bench_out/rust/filtered_genes.txt")
+-r_col <- read.table("bench_out/r/module_colors.txt", header=FALSE, col.names=c("gene","color"), stringsAsFactors=FALSE)
+-rust_col <- read.table("bench_out/rust/module_colors.txt", header=FALSE, col.names=c("gene","color"), stringsAsFactors=FALSE)
+-n_ident <- sum(r_col$color == rust_col$color)
+-
+-parity <- data.frame(
+-  检查项 = c("过滤后基因集（MAD top 8000）", "动态切树 cutreeDynamic 标签", "最终模块颜色分配"),
+-  结果 = c(
+-    ifelse(identical(r_genes, rust_genes), "100% 一致", "不一致"),
+-    "100% 一致（8000/8000）",
+-    sprintf("%d/8000（%.2f%%）", n_ident, 100*n_ident/nrow(r_col))))
+-knitr::kable(parity, format="pipe")
++knitr::kable(read.csv(file.path(audit,"test_counts.csv")))
++knitr::kable(summary)
+ ```
+ 
+-## 4. 模块检测结果
++这里的每一项来自结果文件。历史 `bench_out/` 与原有 `benchmark.html` 保留，
++不作为当前提交的自动验证证据。原报告曾固定写入的“动态切树 100%”结论已取消；
++当前切树结果只在存在相应导出证据时列出。
+ 
+-最终得到 **6 个共表达模块 + 1 个 grey（未分配）模块**：
++## 参数覆盖
+ 
+ ```{r}
+-#| echo: false
+-sizes <- sort(table(r_col$color), decreasing=TRUE)
+-knitr::kable(data.frame(模块=names(sizes), 基因数=as.integer(sizes)), format="pipe")
++knitr::kable(read.csv(file.path(audit,"parameter_coverage.csv")))
+ ```
+ 
+-**模块-性状关联**（模块 eigengene 与亚型的 Pearson 相关）：
++## 连续量误差
+ 
+ ```{r}
+-#| echo: false
+-#| fig-width: 7
+-#| fig-height: 3.2
+-mt <- as.matrix(read.table("bench_out/rust/module_trait_cor.tsv", header=TRUE, row.names=1, check.names=FALSE))
+-pal <- colorRampPalette(c("#4575b4","white","#d73027"))(100)
+-breaks <- seq(-1, 1, length.out=101)
+-cols <- matrix(pal[findInterval(as.vector(mt), breaks)], nrow=nrow(mt))
+-par(mar=c(5,5,1,1))
+-plot(NA, xlim=c(0.5, ncol(mt)+0.5), ylim=c(0.5, nrow(mt)+0.5),
+-     xaxt="n", yaxt="n", xlab="", ylab="", bty="n")
+-for (i in 1:nrow(mt)) for (j in 1:ncol(mt)) {
+-  rect(j-0.5, i-0.5, j+0.5, i+0.5, col=cols[i,j], border="white")
+-  text(j, i, sprintf("%.2f", mt[i,j]), cex=0.85)
++finite <- details[!is.na(details$max_abs),]
++if(nrow(finite)>0) {
++  groups <- split(finite,finite$metric)
++  tab <- do.call(rbind,lapply(groups,function(x)data.frame(metric=x$metric[1],comparisons=nrow(x),max_abs=max(x$max_abs),max_rmse=max(x$rmse),failed=sum(x$status=="FAIL"))))
++  knitr::kable(tab,digits=12)
+ }
+-axis(1, at=1:ncol(mt), labels=colnames(mt), las=2, tick=FALSE)
+-axis(2, at=1:nrow(mt), labels=rownames(mt), las=2, tick=FALSE)
+-```
+-
+-- **blue 模块** 与 **Luminal 亚型** 强正相关（r = 0.91，p < 1e-10）；
+-- **brown 模块** 与 **Basal**（r = 0.51）及 **Non_malignant**（r = 0.51）正相关。
+-
+-## 5. 性能基准
+-
+-```{r}
+-#| echo: false
+-rt <- read.table("bench_out/r/timings.tsv", header=TRUE)
+-rustt <- read.table("bench_out/rust/timings.tsv", header=TRUE)
+-m <- merge(rt, rustt, by="step", suffixes=c("_R","_Rust"))
+-m$speedup <- m$seconds_R / m$seconds_Rust
+-m$step <- factor(m$step, levels=c("log10_normalize","mad_topN","cor","tom","module_detection_total","module_trait"),
+-                 labels=c("log10 归一化","MAD top 8000","相关矩阵 cor","TOM","模块检测(总)","模块-性状"))
+-knitr::kable(data.frame(步骤=m$step, R秒=round(m$seconds_R,3), Rust秒=round(m$seconds_Rust,3), 加速=round(m$speedup,1)), format="pipe")
+ ```
+ 
+-端到端（预处理 + 完整 WGCNA 管线）总耗时：
++同一汇总中可能包括已知失败配置；具体数据集与参数见 `parity_details.csv`。
++真实数据原基准的 Rust 模块–性状输出仅保留六位小数，无法用来证明机器精度。
++带额外探针与中间状态的诊断运行单独记录，不用于性能结论。
+ 
+-```{r}
+-#| echo: false
+-# 端到端不重复计入 cor/tom（它们是 module_detection_total 的子步骤）
+-non_overlap <- c("log10_normalize", "mad_topN", "module_detection_total", "module_trait")
+-total_R <- sum(rt$seconds[match(non_overlap, rt$step)])
+-total_Rust <- sum(rustt$seconds[match(non_overlap, rustt$step)])
+-cat(sprintf("**R 端到端 %.1f 秒 vs rs-WGCNA 端到端 %.1f 秒，整体加速 %.1f 倍**。",
+-    total_R, total_Rust, total_R/total_Rust))
+-```
++## 性能
+ 
+ ```{r}
+-#| echo: false
+-#| fig-width: 7
+-#| fig-height: 3.2
+-steps <- c("log10","MAD","cor","TOM","模块检测","模块-性状")
+-r_sec <- c(rt$seconds[match(c("log10_normalize","mad_topN","cor","tom","module_detection_total","module_trait"), rt$step)])
+-rust_sec <- c(rustt$seconds[match(c("log10_normalize","mad_topN","cor","tom","module_detection_total","module_trait"), rustt$step)])
+-mat <- rbind(R=r_sec, Rust=rust_sec)
+-par(mar=c(5,4,2,1))
+-barplot(mat, beside=TRUE, col=c("#9ecae1","#3182bd"), names.arg=steps, las=1,
+-        ylab="秒（对数刻度）", log="y", legend.text=c("R (reference-BLAS)","rs-WGCNA (faer)"),
+-        args.legend=list(x="topleft", bty="n"))
++knitr::kable(read.csv(file.path(audit,"benchmark_summary.csv")))
+ ```
+ 
+-关键瓶颈 **TOM**（拓扑重叠矩阵，O(G³)）：R 用单线程 reference-BLAS 耗时 ~110 秒，
+-rs-WGCNA 用 faer 多线程耗时 ~6.8 秒，**加速约 16 倍**。
++Scenario A 使用原有默认环境（R reference BLAS / Rust faer 默认可用线程）；
++Scenario B 只有在加载并验证本地优化 BLAS 后才报告，并显式控制线程数。
++计时区间沿用原基准；端到端和仅包含读取/预处理、模块检测与性状关联，避免重复加入
++单独测量的 cor/TOM。任何并行审计负载、仅一次测量和内存测量缺失均在详细 Markdown
++报告中注明。这些是环境相关的实现耗时，不能据此声称纯算法加速比。
+ 
+-## 6. 结论
++## 可复核材料
+ 
+-1. **结果完全一致**：过滤、动态切树、最终模块颜色分配在 8000 个基因上**逐位一致（100%）**，
+-   证明 rs-WGCNA 是对 R WGCNA 的忠实、数值等价的重实现。
+-2. **显著提速**：端到端约 **10 倍**，核心 TOM 步骤约 **16 倍**，且规模越大差距越大。
+-3. rs-WGCNA 以纯 Rust（faer）实现，**无需用户配置 BLAS**，直接解决了"普通用户不改 BLAS
+-   导致矩阵计算慢"的痛点。
++完整解释、失败项、差异基因调查和限制见
++[SCIENTIFIC_PARITY_AUDIT.md](../validation/audit/SCIENTIFIC_PARITY_AUDIT.md)。
++所有结论以生成的 CSV/TSV、精确命令和退出码为依据；不从历史手填值推断通过。
+diff --git a/scripts/compare.R b/scripts/compare.R
+index 0e61f6b..1093d61 100644
+--- a/scripts/compare.R
++++ b/scripts/compare.R
+@@ -1,66 +1,79 @@
+ #!/usr/bin/env Rscript
+-# Compare Rust outputs against R reference outputs with a tolerance.
+-
+-args <- commandArgs(trailingOnly = TRUE)
+-if (length(args) < 2) {
+-    stop("usage: compare.R <rust_dir> <r_dir> [tol]")
++# Strict parity comparison. No implicit optional files. Absolute tolerance decides
++# PASS; relative error is diagnostic using max(abs(reference), 1e-12).
++read_checked <- function(path) {
++  if (!file.exists(path)) stop('required file missing: ', path)
++  x <- read.delim(path, check.names=FALSE, row.names=NULL, stringsAsFactors=FALSE)
++  if (ncol(x)<2 || nrow(x)<1) stop('empty/invalid table: ',path)
++  ids <- as.character(x[[1]]); cols <- names(x)[-1]
++  valid_ids <- function(z) length(z)>0 && !anyNA(z) && all(nzchar(z)) && !anyDuplicated(z)
++  if (!valid_ids(ids) || !valid_ids(cols)) stop('missing/duplicate identifiers: ',path)
++  m <- as.matrix(x[-1]); storage.mode(m)<-'double'; rownames(m)<-ids
++  if (any(!is.finite(m))) stop('unexpected NA/NaN/Inf: ',path)
++  m
+ }
+-rust_dir <- args[1]
+-r_dir <- args[2]
+-tol <- if (length(args) >= 3) as.numeric(args[3]) else 1e-9
+-
+-read_mat <- function(file) {
+-    as.matrix(read.table(file, header = TRUE, row.names = 1, check.names = FALSE))
++align_checked <- function(x,y) {
++  if (!identical(dim(x),dim(y))) stop('dimension mismatch')
++  if (!setequal(rownames(x),rownames(y)) || !setequal(colnames(x),colnames(y))) stop('identifier set mismatch')
++  x[rownames(y),colnames(y),drop=FALSE]
+ }
+-
+-files <- c(
+-    "cor.tsv", "adjacency.tsv", "tom.tsv", "sft.tsv",
+-    "eigengenes.tsv", "kme.tsv", "module_trait_cor.tsv", "module_trait_p.tsv"
+-)
+-ok <- TRUE
+-for (f in files) {
+-    rf <- file.path(rust_dir, f)
+-    rr <- file.path(r_dir, f)
+-    if (!file.exists(rf) || !file.exists(rr)) {
+-        cat(sprintf("%-24s SKIP (missing)\n", f))
+-        next
+-    }
+-    r <- read_mat(rf)
+-    ref <- read_mat(rr)
+-    if (!identical(dim(r), dim(ref))) {
+-        cat(sprintf("%-24s FAIL (dim %dx%d vs %dx%d)\n", f, nrow(r), ncol(r), nrow(ref), ncol(ref)))
+-        ok <- FALSE
+-        next
+-    }
+-    d <- abs(r - ref)
+-    maxd <- max(d, na.rm = TRUE)
+-    nbad <- sum(d > tol, na.rm = TRUE)
+-    pass <- maxd <= tol
+-    if (!pass) ok <- FALSE
+-    cat(sprintf(
+-        "%-24s %s  max_abs_diff=%.3e  (>tol: %d/%d entries)\n",
+-        f, if (pass) "PASS" else "FAIL", maxd, nbad, length(d)
+-    ))
++error_metrics <- function(x,y,tol) {
++  x<-align_checked(x,y); d<-abs(x-y)
++  data.frame(total=length(d),max_abs=max(d),mean_abs=mean(d),rmse=sqrt(mean(d*d)),
++             max_relative=max(d/pmax(abs(y),1e-12)),above_tolerance=sum(d>tol),
++             proportion_above=mean(d>tol),tolerance=tol)
+ }
+-
+-# Module colors (discrete labels): compare exact match rate.
+-cf_r <- file.path(rust_dir, "module_colors.tsv")
+-cf_ref <- file.path(r_dir, "module_colors.tsv")
+-if (file.exists(cf_r) && file.exists(cf_ref)) {
+-    r <- readLines(cf_r)
+-    ref <- readLines(cf_ref)
+-    nmatch <- sum(r == ref)
+-    pass <- nmatch == length(r) && length(r) == length(ref)
+-    if (!pass) ok <- FALSE
+-    cat(sprintf(
+-        "%-24s %s  %d/%d genes identical\n",
+-        "module_colors.tsv", if (pass) "PASS" else "FAIL", nmatch, length(r)
+-    ))
++partition_metrics <- function(x,y) {
++  tab<-table(x,y); c2<-function(z) z*(z-1)/2; n<-length(x)
++  a<-sum(c2(tab)); b<-sum(c2(rowSums(tab))); c<-sum(c2(colSums(tab)))
++  expected<-if(n>1) b*c/c2(n) else 0; den<-(b+c)/2-expected
++  ari<-if(den==0) if(a==(b+c)/2) 1 else 0 else (a-expected)/den
++  list(total=n,exact_agreement=mean(x==y),disagreeing=sum(x!=y),ARI=ari,contingency=tab)
+ }
+-
+-if (!ok) {
+-    cat("RESULT: FAIL\n")
+-    quit(status = 1)
+-} else {
+-    cat("RESULT: PASS (all within tol =", format(tol, scientific = TRUE), ")\n")
++compare_main <- function(args) {
++ if(length(args)<2) stop('usage: compare.R <rust_dir> <r_dir> [tol=1e-9] [results_dir] [expression.tsv]')
++ tol<-if(length(args)>=3) as.numeric(args[3]) else 1e-9
++ if(length(tol)!=1 || !is.finite(tol) || tol<0) stop('invalid tolerance')
++ out<-if(length(args)>=4) args[4] else file.path(args[1],'comparison')
++ dir.create(out,recursive=TRUE,showWarnings=FALSE)
++ files<-c('cor.tsv','adjacency.tsv','tom.tsv','sft.tsv','eigengenes.tsv','kme.tsv','module_trait_cor.tsv','module_trait_p.tsv')
++ rows<-list(); ok<-TRUE
++ for(f in files) {
++  row<-tryCatch({
++   x<-read_checked(file.path(args[1],f)); y<-read_checked(file.path(args[2],f))
++   if(f=='sft.tsv') { # Explicit WGCNA fitIndices naming aliases only.
++    aliases<-c('SFT.R.sq'='R.sq','mean.k.'='mean.k','median.k.'='median.k','max.k.'='max.k')
++    for(a in names(aliases)) {colnames(x)[colnames(x)==a]<-aliases[[a]];colnames(y)[colnames(y)==a]<-aliases[[a]]}
++   }
++   if(length(args)>=5) {
++    ex<-read_checked(args[5]); expected_rows<-switch(f,'cor.tsv'=rownames(ex),'adjacency.tsv'=rownames(ex),'tom.tsv'=rownames(ex),'kme.tsv'=rownames(ex),'eigengenes.tsv'=colnames(ex),NULL)
++    if(!is.null(expected_rows) && (!setequal(rownames(x),expected_rows)||!setequal(rownames(y),expected_rows))) stop('IDs differ from input expression')
++    if(f %in% c('cor.tsv','adjacency.tsv','tom.tsv') && (!setequal(colnames(x),rownames(ex))||!setequal(colnames(y),rownames(ex)))) stop('column gene IDs differ from input expression')
++   }
++   z<-error_metrics(x,y,tol); cbind(metric=f,status=if(z$above_tolerance==0) 'PASS' else 'FAIL',reason='',z)
++  },error=function(e) data.frame(metric=f,status='FAIL',reason=conditionMessage(e),total=NA,max_abs=NA,mean_abs=NA,rmse=NA,max_relative=NA,above_tolerance=NA,proportion_above=NA,tolerance=tol))
++  rows[[f]]<-row; if(row$status!='PASS') ok<-FALSE
++ }
++ # Unlabelled color vectors require a proven gene-order contract from each
++ # side's labelled correlation table; the generating harness uses expr order.
++ tryCatch({
++  gx<-rownames(read_checked(file.path(args[1],'cor.tsv'))); gy<-rownames(read_checked(file.path(args[2],'cor.tsv')))
++  x<-readLines(file.path(args[1],'module_colors.tsv')); y<-readLines(file.path(args[2],'module_colors.tsv'))
++  if(length(x)!=length(gx)||length(y)!=length(gy)||any(!nzchar(c(x,y)))) stop('invalid colors length/labels')
++  if(!setequal(gx,gy)) stop('color gene IDs differ')
++  if(length(args)>=5) {
++   ex<-read_checked(args[5]); if(!identical(gx,rownames(ex))||!identical(gy,rownames(ex))) stop('unlabelled color ordering contract violated')
++   meX<-read_checked(file.path(args[1],'eigengenes.tsv')); meY<-read_checked(file.path(args[2],'eigengenes.tsv'))
++   if(!setequal(rownames(meX),colnames(ex))||!setequal(rownames(meY),colnames(ex))) stop('sample IDs differ from expression')
++  }
++  x<-x[match(gy,gx)]; z<-partition_metrics(x,y)
++  write.csv(data.frame(total=z$total,exact_agreement=z$exact_agreement,disagreeing=z$disagreeing,ARI=z$ARI),file.path(out,'module_summary.csv'),row.names=FALSE)
++  write.table(as.data.frame(z$contingency),file.path(out,'module_contingency.tsv'),sep='\t',quote=FALSE,row.names=FALSE)
++  write.table(data.frame(gene=gy[x!=y],rust=x[x!=y],R=y[x!=y]),file.path(out,'module_disagreements.tsv'),sep='\t',quote=FALSE,row.names=FALSE)
++  rows[['colors']]<-data.frame(metric='module_colors.tsv',status=if(z$disagreeing==0) 'PASS' else 'FAIL',reason=paste('exact disagreements',z$disagreeing,'ARI',z$ARI),total=z$total,max_abs=NA,mean_abs=NA,rmse=NA,max_relative=NA,above_tolerance=NA,proportion_above=NA,tolerance=tol)
++  if(z$disagreeing>0) ok<-FALSE
++ },error=function(e) {ok<<-FALSE; rows[['colors']]<<-data.frame(metric='module_colors.tsv',status='FAIL',reason=conditionMessage(e),total=NA,max_abs=NA,mean_abs=NA,rmse=NA,max_relative=NA,above_tolerance=NA,proportion_above=NA,tolerance=tol)})
++ result<-do.call(rbind,rows);write.csv(result,file.path(out,'parity_details.csv'),row.names=FALSE);print(result,row.names=FALSE)
++ cat('RESULT:',if(ok) 'PASS' else 'FAIL','\n'); if(!ok) quit(status=1)
+ }
++if(sys.nframe()==0) compare_main(commandArgs(trailingOnly=TRUE))
+diff --git a/scripts/r_reference.R b/scripts/r_reference.R
+index 1d83dbc..1478840 100644
+--- a/scripts/r_reference.R
++++ b/scripts/r_reference.R
+@@ -14,17 +14,23 @@ colors_file <- if (length(args) >= 4) args[4] else NA
+ trait_file <- if (length(args) >= 5) args[5] else NA
+ 
+ suppressMessages(library(WGCNA))
++nt <- if(length(args)>=6) args[6] else "unsigned"
++tt <- if(length(args)>=7) args[7] else "signed"
++td <- if(length(args)>=8) args[8] else "min"
++deep <- if(length(args)>=9) as.integer(args[9]) else 2
++merge_height <- if(length(args)>=10) as.numeric(args[10]) else .15
+ 
+ expr <- read.table(expr_file, header = TRUE, row.names = 1, check.names = FALSE)
+ datExpr <- t(expr)  # samples x genes
+ genes <- colnames(datExpr)
+ n_samples <- nrow(datExpr)
+ 
++stopifnot(!anyDuplicated(genes), !anyDuplicated(rownames(datExpr)), all(is.finite(as.matrix(datExpr))))
+ cor_mat <- cor(datExpr, use = "p")
+-adj <- adjacency(datExpr, type = "unsigned", power = power)
++adj <- adjacency(datExpr, type = nt, power = power)
+ tom <- TOMsimilarityFromExpr(
+     datExpr,
+-    networkType = "unsigned", TOMType = "signed", TOMDenom = "min", power = power
++    networkType = nt, TOMType = tt, TOMDenom = td, power = power
+ )
+ dimnames(cor_mat) <- list(genes, genes)
+ dimnames(adj) <- list(genes, genes)
+@@ -48,10 +54,17 @@ write_square(cor_mat, file.path(outdir, "cor.tsv"))
+ write_square(adj, file.path(outdir, "adjacency.tsv"))
+ write_square(tom, file.path(outdir, "tom.tsv"))
+ 
++# Extra labelled test diagnostics, without changing reference algorithms.
++tree <- hclust(as.dist(1-tom),method="average")
++write.table(data.frame(ID=seq_along(tree$height),left=tree$merge[,1],right=tree$merge[,2],height=tree$height),file.path(outdir,"tree.tsv"),sep="\t",quote=FALSE,row.names=FALSE)
++dyn <- cutreeDynamic(tree,distM=1-tom,deepSplit=deep,minClusterSize=20,cutHeight=.995,pamRespectsDendro=TRUE,verbose=0)
++write_mat(matrix(dyn,ncol=1,dimnames=list(genes,"label")),file.path(outdir,"dynamic.tsv"))
++write_mat(matrix(rowSums(adj)-diag(adj),ncol=1,dimnames=list(genes,"total")),file.path(outdir,"connectivity.tsv"))
++
+ # --- soft threshold ---
+ power_vector <- c(seq(1, 10, by = 1), seq(12, 20, by = 2))
+ sft <- pickSoftThreshold(
+-    datExpr, networkType = "unsigned", powerVector = power_vector,
++    datExpr, networkType = nt, powerVector = power_vector,
+     RsquaredCut = 0.85, verbose = 0
+ )
+ write.table(
+@@ -75,6 +88,7 @@ if (!is.na(colors_file)) {
+     # --- module-trait (require trait) ---
+     if (!is.na(trait_file)) {
+         trait_df <- read.table(trait_file, header = TRUE, row.names = 1, check.names = FALSE)
++        stopifnot(!anyDuplicated(rownames(trait_df)), setequal(rownames(trait_df),rownames(datExpr)))
+         datTraits <- trait_df[rownames(datExpr), , drop = FALSE]
+         mt_cor <- cor(MEs, datTraits, use = "p")
+         mt_p <- corPvalueStudent(mt_cor, n_samples)
+@@ -86,9 +100,9 @@ if (!is.na(colors_file)) {
+ # --- full module detection (blockwiseModules, single block) ---
+ net <- blockwiseModules(
+     datExpr,
+-    power = power, networkType = "unsigned", TOMType = "signed", TOMDenom = "min",
+-    minModuleSize = min(20, ncol(datExpr) / 2), mergeCutHeight = 0.15,
+-    maxBlockSize = ncol(datExpr), deepSplit = 2, detectCutHeight = 0.995,
++    power = power, networkType = nt, TOMType = tt, TOMDenom = td,
++    minModuleSize = min(20, ncol(datExpr) / 2), mergeCutHeight = merge_height,
++    maxBlockSize = ncol(datExpr), deepSplit = deep, detectCutHeight = 0.995,
+     numericLabels = FALSE, verbose = 0
+ )
+ writeLines(net$colors, file.path(outdir, "module_colors.tsv"))
+diff --git a/scripts/run_parity.sh b/scripts/run_parity.sh
+index 9cafc25..42f85e0 100755
+--- a/scripts/run_parity.sh
++++ b/scripts/run_parity.sh
+@@ -4,13 +4,17 @@ set -euo pipefail
+ 
+ HERE="$(cd "$(dirname "$0")" && pwd)"
+ ROOT="$(cd "$HERE/.." && pwd)"
++WORK="${3:-$(mktemp -d "${TMPDIR:-/tmp}/rs-wgcna-parity.XXXXXX")}"
++mkdir -p "$WORK"
++WORK="$(cd "$WORK" && pwd)"
++echo "Evidence directory: $WORK"
+ POWER="${1:-6}"
+ TOL="${2:-1e-9}"
+ 
+ CARGO="$HOME/.cargo/bin/cargo"
+ 
+ echo "== 1. generate test data =="
+-Rscript "$HERE/gen_testdata.R" "$ROOT/testdata/expr.tsv"
++Rscript "$HERE/gen_testdata.R" "$WORK/testdata/expr.tsv"
+ 
+ echo "== 2. build Rust (release) =="
+ cd "$ROOT"
+@@ -18,13 +22,13 @@ cd "$ROOT"
+ 
+ echo "== 3. run Rust =="
+ "$ROOT/target/release/rs-wgcna" \
+-    "$ROOT/testdata/expr.tsv" "$POWER" "$ROOT/rust_out" \
+-    "$ROOT/testdata/colors.txt" "$ROOT/testdata/trait.tsv"
++    "$WORK/testdata/expr.tsv" "$POWER" "$WORK/rust_out" \
++    "$WORK/testdata/colors.txt" "$WORK/testdata/trait.tsv"
+ 
+ echo "== 4. run R reference =="
+ Rscript "$HERE/r_reference.R" \
+-    "$ROOT/testdata/expr.tsv" "$ROOT/r_out" "$POWER" \
+-    "$ROOT/testdata/colors.txt" "$ROOT/testdata/trait.tsv"
++    "$WORK/testdata/expr.tsv" "$WORK/r_out" "$POWER" \
++    "$WORK/testdata/colors.txt" "$WORK/testdata/trait.tsv"
+ 
+ echo "== 5. compare =="
+-Rscript "$HERE/compare.R" "$ROOT/rust_out" "$ROOT/r_out" "$TOL"
++Rscript "$HERE/compare.R" "$WORK/rust_out" "$WORK/r_out" "$TOL" "$WORK/comparison" "$WORK/testdata/expr.tsv"
+diff --git a/examples/audit_matrix.rs b/examples/audit_matrix.rs
+new file mode 100644
+index 0000000..91cc84a
+--- /dev/null
++++ b/examples/audit_matrix.rs
+@@ -0,0 +1,198 @@
++// TEST-ONLY parameterized extension of src/main.rs. Generated by validation/audit/prepare_matrix.py.
++//! Internal parity harness (not a user-facing CLI).
++//!
++//! Reads an expression matrix (plus optional colors / trait files) and writes
++//! cor / adjacency / TOM / SFT / eigengenes / kME / module-trait as TSV so they
++//! can be diffed against the R reference (scripts/r_reference.R).
++
++use std::env;
++use std::io::Write;
++
++use faer::Mat;
++use rs_wgcna::adjacency::adjacency;
++use rs_wgcna::correlation::pearson;
++use rs_wgcna::eigengene::module_eigengene;
++use rs_wgcna::io::{read_expression, read_trait};
++use rs_wgcna::kme::kme;
++use rs_wgcna::module_trait::module_trait_cor;
++use rs_wgcna::network::{NetworkType, TomDenom, TomType};
++use rs_wgcna::sft::pick_soft_threshold;
++use rs_wgcna::tom::tom_from_cor;
++
++fn fmt(v: f64) -> String {
++    if v.is_nan() {
++        "NA".to_string()
++    } else {
++        format!("{v:.17}")
++    }
++}
++
++fn write_mat(
++    path: &str,
++    m: &Mat<f64>,
++    row_names: &[String],
++    col_names: &[String],
++) -> std::io::Result<()> {
++    let mut f = std::fs::File::create(path)?;
++    write!(f, "ID")?;
++    for c in col_names {
++        write!(f, "\t{c}")?;
++    }
++    writeln!(f)?;
++    for i in 0..m.nrows() {
++        write!(f, "{}", row_names[i])?;
++        for j in 0..m.ncols() {
++            write!(f, "\t{}", fmt(m[(i, j)]))?;
++        }
++        writeln!(f)?;
++    }
++    Ok(())
++}
++
++fn read_lines(path: &str) -> Vec<String> {
++    std::fs::read_to_string(path)
++        .unwrap_or_default()
++        .lines()
++        .map(|l| l.trim().to_string())
++        .filter(|l| !l.is_empty())
++        .collect()
++}
++
++fn main() {
++    let args: Vec<String> = env::args().collect();
++    if args.len() < 3 {
++        eprintln!("usage: rs-wgcna <expression.tsv> <power> <outdir> [colors.txt] [trait.tsv]");
++        std::process::exit(2);
++    }
++    let expr_path = &args[1];
++    let power: f64 = args[2].parse().expect("power");
++    let outdir = &args[3];
++    let colors_path = args.get(4);
++    let trait_path = args.get(5);
++
++    std::fs::create_dir_all(outdir).expect("create outdir");
++
++    let exp = read_expression(expr_path).expect("read expression matrix");
++    eprintln!(
++        "loaded {} genes x {} samples",
++        exp.n_genes(),
++        exp.n_samples()
++    );
++
++    let threads = std::thread::available_parallelism()
++        .map(|n| n.get())
++        .unwrap_or(1);
++    let nt = NetworkType::from_str(&args[6]).unwrap();
++    let tt = TomType::from_str(&args[7]).unwrap();
++    let td = TomDenom::from_str(&args[8]).unwrap();
++    let deep: usize = args[9].parse().unwrap();
++    let merge: f64 = args[10].parse().unwrap();
++
++    // --- cor / adjacency / TOM ---
++    let cor = pearson(&exp.data, threads).expect("correlation");
++    write_mat(&format!("{outdir}/cor.tsv"), &cor, &exp.genes, &exp.genes).expect("write cor");
++
++    let adj = adjacency(&cor, power, nt);
++    write_mat(&format!("{outdir}/adjacency.tsv"), &adj, &exp.genes, &exp.genes)
++        .expect("write adjacency");
++
++    let tom = tom_from_cor(&cor, power, nt, tt, td, threads);
++    write_mat(&format!("{outdir}/tom.tsv"), &tom, &exp.genes, &exp.genes).expect("write tom");
++
++    let diss = Mat::from_fn(tom.nrows(), tom.ncols(), |i,j| 1.0-tom[(i,j)]);
++    let tree = rs_wgcna::hclust::hclust_average(&diss);
++    let labs = rs_wgcna::cutree::cutree_hybrid(&tree.merge,&tree.height,&diss,20,deep,0.995,true,true);
++    let mut f = std::fs::File::create(format!("{outdir}/tree.tsv")).unwrap();
++    writeln!(f,"ID\tleft\tright\theight").unwrap();
++    for (i, ((l,r),h)) in tree.merge.iter().zip(tree.height.iter()).enumerate() { writeln!(f,"{}\t{}\t{}\t{:.17}",i+1,l,r,h).unwrap(); }
++    let mut f = std::fs::File::create(format!("{outdir}/dynamic.tsv")).unwrap();
++    writeln!(f,"ID\tlabel").unwrap();
++    for (g,l) in exp.genes.iter().zip(labs.iter()) {writeln!(f,"{}\t{}",g,l).unwrap();}
++    let conn = Mat::from_fn(adj.nrows(),1,|i,_| (0..adj.ncols()).filter(|&j| j!=i).map(|j|adj[(i,j)]).sum::<f64>());
++    write_mat(&format!("{outdir}/connectivity.tsv"), &conn, &exp.genes, &["total".into()]).unwrap();
++    // --- soft threshold (fit indices) ---
++    let power_vector: Vec<f64> = (1..=10)
++        .map(|p| p as f64)
++        .chain((12..=20).step_by(2).map(|p| p as f64))
++        .collect();
++    let (_, sft_rows) = pick_soft_threshold(&cor, nt, &power_vector, 0.85, 10, false);
++    {
++        let mut f = std::fs::File::create(format!("{outdir}/sft.tsv")).expect("create sft");
++        writeln!(f, "Power\tR.sq\tslope\ttruncated.R.sq\tmean.k\tmedian.k\tmax.k").unwrap();
++        for r in &sft_rows {
++            writeln!(
++                f,
++                "{}\t{}\t{}\t{}\t{}\t{}\t{}",
++                r[0], r[1], r[2], r[3], r[4], r[5], r[6]
++            )
++            .unwrap();
++        }
++    }
++
++    // --- eigengenes + kME (require colors) ---
++    if let Some(cp) = colors_path {
++        let colors = read_lines(cp);
++        assert_eq!(colors.len(), exp.n_genes(), "colors length != n_genes");
++        let mut modules: Vec<&String> = colors.iter().collect();
++        modules.sort();
++        modules.dedup();
++
++        let g = exp.n_genes();
++        let n = exp.n_samples();
++        let k = modules.len();
++        let mut mes = Mat::<f64>::zeros(n, k);
++        let mut mod_cols: Vec<String> = Vec::with_capacity(k);
++        for (mi, m) in modules.iter().enumerate() {
++            let idx: Vec<usize> = (0..g).filter(|&i| &colors[i] == *m).collect();
++            let me = module_eigengene(&exp.data, &idx);
++            for j in 0..n {
++                mes[(j, mi)] = me[j];
++            }
++            mod_cols.push((*m).clone());
++        }
++        write_mat(
++            &format!("{outdir}/eigengenes.tsv"),
++            &mes,
++            &exp.samples,
++            &mod_cols,
++        )
++        .expect("write eigengenes");
++
++        let km = kme(&exp.data, &mes);
++        write_mat(&format!("{outdir}/kme.tsv"), &km, &exp.genes, &mod_cols).expect("write kme");
++
++        // --- module-trait (require trait) ---
++        if let Some(tp) = trait_path {
++            let (_samples, traits, tdata) = read_trait(tp).expect("read trait");
++            let (cor, p) = module_trait_cor(&mes, &tdata);
++            write_mat(&format!("{outdir}/module_trait_cor.tsv"), &cor, &mod_cols, &traits)
++                .expect("write mt cor");
++            write_mat(&format!("{outdir}/module_trait_p.tsv"), &p, &mod_cols, &traits)
++                .expect("write mt p");
++        }
++    }
++
++    // --- full module detection (blockwiseModules single block) ---
++    let min_module_size = 20usize.min(exp.n_genes() / 2);
++    let module_colors = rs_wgcna::pipeline::blockwise_modules_single(
++        &exp.data,
++        power,
++        nt,
++        tt,
++        td,
++        min_module_size,
++        merge,
++        deep,
++        0.995,
++        threads,
++    );
++    {
++        let mut f =
++            std::fs::File::create(format!("{outdir}/module_colors.tsv")).expect("create colors");
++        for c in &module_colors {
++            writeln!(f, "{c}").unwrap();
++        }
++    }
++
++    eprintln!("done.");
++}
+diff --git a/examples/audit_perf.rs b/examples/audit_perf.rs
+new file mode 100644
+index 0000000..5b3c91b
+--- /dev/null
++++ b/examples/audit_perf.rs
+@@ -0,0 +1,164 @@
++// TEST-ONLY benchmark with explicit thread control; otherwise identical timing boundaries.
++//! Real-data benchmark: FPKM -> log10(x+1) -> MAD top-8000 -> WGCNA ->
++//! module-trait. Writes results + per-step timings for the Quarto report.
++
++use std::time::Instant;
++
++use faer::Mat;
++use rs_wgcna::correlation::pearson;
++use rs_wgcna::eigengene::module_eigengene;
++use rs_wgcna::filter::{normalize, top_genes_by, FilterMethod, NormalizeMethod};
++use rs_wgcna::io::{read_expression, read_trait};
++use rs_wgcna::module_trait::module_trait_cor;
++use rs_wgcna::network::{NetworkType, TomDenom, TomType};
++use rs_wgcna::pipeline::blockwise_modules_single;
++use rs_wgcna::tom::tom_from_cor;
++
++fn main() {
++    let args: Vec<String> = std::env::args().collect();
++    let fpkmpath = &args[1];
++    let traitpath = &args[2];
++    let outdir = &args[3];
++    let n_keep: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8000);
++    std::fs::create_dir_all(outdir).unwrap();
++
++    let threads: usize = std::env::var("AUDIT_THREADS").unwrap_or("8".into()).parse().unwrap();
++    rayon::ThreadPoolBuilder::new().num_threads(threads).build_global().unwrap();
++    let mut timings: Vec<(String, f64)> = Vec::new();
++
++    // 1. read + normalize
++    let t = Instant::now();
++    let exp = read_expression(fpkmpath).unwrap();
++    let norm = normalize(&exp.data, NormalizeMethod::Log10p1);
++    timings.push(("log10_normalize".into(), t.elapsed().as_secs_f64()));
++
++    // 2. MAD top-N
++    let t = Instant::now();
++    let idx = top_genes_by(&norm, n_keep, FilterMethod::Mad);
++    let g = idx.len();
++    let n = norm.ncols();
++    let mut filtered = Mat::<f64>::zeros(g, n);
++    for (r, &i) in idx.iter().enumerate() {
++        for j in 0..n {
++            filtered[(r, j)] = norm[(i, j)];
++        }
++    }
++    let filtered_genes: Vec<String> = idx.iter().map(|&i| exp.genes[i].clone()).collect();
++    timings.push(("mad_topN".into(), t.elapsed().as_secs_f64()));
++
++    // 3. correlation
++    let t = Instant::now();
++    let cor = pearson(&filtered, threads).unwrap();
++    timings.push(("cor".into(), t.elapsed().as_secs_f64()));
++
++    // 4. TOM
++    let t = Instant::now();
++    let _tom = tom_from_cor(
++        &cor,
++        6.0,
++        NetworkType::Unsigned,
++        TomType::Signed,
++        TomDenom::Min,
++        threads,
++    );
++    timings.push(("tom".into(), t.elapsed().as_secs_f64()));
++
++    // 5. full module detection (cor+TOM+hclust+cutree+merge)
++    let t = Instant::now();
++    let colors = blockwise_modules_single(
++        &filtered,
++        6.0,
++        NetworkType::Unsigned,
++        TomType::Signed,
++        TomDenom::Min,
++        30,
++        0.25,
++        2,
++        0.995,
++        threads,
++    );
++    timings.push(("module_detection_total".into(), t.elapsed().as_secs_f64()));
++
++    // 6. module eigengenes + module-trait
++    let t = Instant::now();
++    let trait_data = read_trait(traitpath).unwrap();
++    let traits = trait_data.1;
++    let tdata = trait_data.2;
++    // final module order (alphabetical non-grey)
++    let mut mods: Vec<String> = colors.iter().cloned().collect();
++    mods.sort();
++    mods.dedup();
++    let mods: Vec<String> = mods.into_iter().filter(|c| c != "grey").collect();
++    let k = mods.len();
++    let mut mes = Mat::<f64>::zeros(n, k);
++    for (mi, m) in mods.iter().enumerate() {
++        let midx: Vec<usize> = (0..g).filter(|&i| colors[i] == *m).collect();
++        let me = module_eigengene(&filtered, &midx);
++        for j in 0..n {
++            mes[(j, mi)] = me[j];
++        }
++    }
++    let (mt_cor, mt_p) = module_trait_cor(&mes, &tdata);
++    timings.push(("module_trait".into(), t.elapsed().as_secs_f64()));
++
++    // write outputs
++    let mut f = std::fs::File::create(format!("{outdir}/filtered_genes.txt")).unwrap();
++    for gi in &filtered_genes {
++        use std::io::Write;
++        writeln!(f, "{gi}").unwrap();
++    }
++    let mut f = std::fs::File::create(format!("{outdir}/module_colors.txt")).unwrap();
++    for (gi, c) in filtered_genes.iter().zip(colors.iter()) {
++        use std::io::Write;
++        writeln!(f, "{gi}\t{c}").unwrap();
++    }
++    write_mat(
++        &format!("{outdir}/module_trait_cor.tsv"),
++        &mt_cor,
++        &mods,
++        &traits,
++    );
++    write_mat(
++        &format!("{outdir}/module_trait_p.tsv"),
++        &mt_p,
++        &mods,
++        &traits,
++    );
++    let mut f = std::fs::File::create(format!("{outdir}/timings.tsv")).unwrap();
++    use std::io::Write;
++    writeln!(f, "step\tseconds").unwrap();
++    for (s, v) in &timings {
++        writeln!(f, "{s}\t{v:.4}").unwrap();
++    }
++    let mut f = std::fs::File::create(format!("{outdir}/module_sizes.tsv")).unwrap();
++    writeln!(f, "module\tsize").unwrap();
++    for m in &mods {
++        let sz = colors.iter().filter(|&c| c == m).count();
++        writeln!(f, "{m}\t{sz}").unwrap();
++    }
++
++    eprintln!(
++        "rust: {} genes -> {} MAD-top, {} modules, threads={}",
++        exp.n_genes(),
++        g,
++        mods.len(),
++        threads
++    );
++}
++
++fn write_mat(path: &str, m: &Mat<f64>, rows: &[String], cols: &[String]) {
++    use std::io::Write;
++    let mut f = std::fs::File::create(path).unwrap();
++    write!(f, "ID").unwrap();
++    for c in cols {
++        write!(f, "\t{c}").unwrap();
++    }
++    writeln!(f).unwrap();
++    for i in 0..m.nrows() {
++        write!(f, "{}", rows[i]).unwrap();
++        for j in 0..m.ncols() {
++            write!(f, "\t{:.6}", m[(i, j)]).unwrap();
++        }
++        writeln!(f).unwrap();
++    }
++}
+diff --git a/examples/audit_real.rs b/examples/audit_real.rs
+new file mode 100644
+index 0000000..c68f690
+--- /dev/null
++++ b/examples/audit_real.rs
+@@ -0,0 +1,194 @@
++// TEST-ONLY diagnostic extension of examples/real_bench.rs.
++//! Real-data benchmark: FPKM -> log10(x+1) -> MAD top-8000 -> WGCNA ->
++//! module-trait. Writes results + per-step timings for the Quarto report.
++
++use std::time::Instant;
++
++use faer::Mat;
++use rs_wgcna::correlation::pearson;
++use rs_wgcna::eigengene::module_eigengene;
++use rs_wgcna::filter::{normalize, top_genes_by, FilterMethod, NormalizeMethod};
++use rs_wgcna::io::{read_expression, read_trait};
++use rs_wgcna::module_trait::module_trait_cor;
++use rs_wgcna::network::{NetworkType, TomDenom, TomType};
++use rs_wgcna::pipeline::blockwise_modules_single;
++use rs_wgcna::tom::tom_from_cor;
++
++fn main() {
++    let args: Vec<String> = std::env::args().collect();
++    let fpkmpath = &args[1];
++    let traitpath = &args[2];
++    let outdir = &args[3];
++    let n_keep: usize = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(8000);
++    std::fs::create_dir_all(outdir).unwrap();
++
++    let threads = std::thread::available_parallelism()
++        .map(|n| n.get())
++        .unwrap_or(1);
++    let mut timings: Vec<(String, f64)> = Vec::new();
++
++    // 1. read + normalize
++    let t = Instant::now();
++    let exp = read_expression(fpkmpath).unwrap();
++    let norm = normalize(&exp.data, NormalizeMethod::Log10p1);
++    timings.push(("log10_normalize".into(), t.elapsed().as_secs_f64()));
++
++    // 2. MAD top-N
++    let t = Instant::now();
++    let idx = top_genes_by(&norm, n_keep, FilterMethod::Mad);
++    let g = idx.len();
++    let n = norm.ncols();
++    let mut filtered = Mat::<f64>::zeros(g, n);
++    for (r, &i) in idx.iter().enumerate() {
++        for j in 0..n {
++            filtered[(r, j)] = norm[(i, j)];
++        }
++    }
++    let filtered_genes: Vec<String> = idx.iter().map(|&i| exp.genes[i].clone()).collect();
++    timings.push(("mad_topN".into(), t.elapsed().as_secs_f64()));
++
++    // 3. correlation
++    let t = Instant::now();
++    let cor = pearson(&filtered, threads).unwrap();
++    timings.push(("cor".into(), t.elapsed().as_secs_f64()));
++
++    // 4. TOM
++    let t = Instant::now();
++    let tom = tom_from_cor(
++        &cor,
++        6.0,
++        NetworkType::Unsigned,
++        TomType::Signed,
++        TomDenom::Min,
++        threads,
++    );
++    timings.push(("tom".into(), t.elapsed().as_secs_f64()));
++
++    let probe: Vec<usize> = (0..g).step_by((g/64).max(1)).collect();
++    let probe_genes: Vec<String> = probe.iter().map(|&i|filtered_genes[i].clone()).collect();
++    for (name,mat) in [("cor_probe",&cor),("tom_probe",&tom)] {
++        let sample = Mat::from_fn(probe.len(),g,|i,j|mat[(probe[i],j)]);
++        write_mat(&format!("{outdir}/{name}.tsv"),&sample,&probe_genes,&filtered_genes);
++    }
++    let diss = Mat::from_fn(g,g,|i,j|1.0-tom[(i,j)]);
++    let tree = rs_wgcna::hclust::hclust_average(&diss);
++    let labels = rs_wgcna::cutree::cutree_hybrid(&tree.merge,&tree.height,&diss,30,2,0.995,true,true);
++    let mut f = std::fs::File::create(format!("{outdir}/tree.tsv")).unwrap();
++    writeln!(f,"ID\tleft\tright\theight").unwrap();
++    for (i,((a,b),h)) in tree.merge.iter().zip(tree.height.iter()).enumerate() {writeln!(f,"{}\t{}\t{}\t{:.17}",i+1,a,b,h).unwrap();}
++    let dynamic = Mat::from_fn(g,1,|i,_|labels[i] as f64);
++    write_mat(&format!("{outdir}/dynamic.tsv"),&dynamic,&filtered_genes,&["label".into()]);
++    let mut cleaned = labels.clone();
++    rs_wgcna::pipeline::cleanup_by_kme(&filtered,&mut cleaned,30,NetworkType::Unsigned);
++    let cleaned = Mat::from_fn(g,1,|i,_|cleaned[i] as f64);
++    write_mat(&format!("{outdir}/cleanup.tsv"),&cleaned,&filtered_genes,&["label".into()]);
++    let powers:Vec<f64>=(1..=10).map(|x|x as f64).chain((12..=20).step_by(2).map(|x|x as f64)).collect();
++    let (_,sft)=rs_wgcna::sft::pick_soft_threshold(&cor,NetworkType::Unsigned,&powers,0.85,10,false);
++    let sm=Mat::from_fn(sft.len(),6,|i,j|sft[i][j+1]);
++    write_mat(&format!("{outdir}/sft.tsv"),&sm,&powers.iter().map(|p|p.to_string()).collect::<Vec<_>>(),&["R.sq","slope","truncated.R.sq","mean.k","median.k","max.k"].map(String::from));
++    drop(diss);
++    // 5. full module detection (cor+TOM+hclust+cutree+merge)
++    let t = Instant::now();
++    let colors = blockwise_modules_single(
++        &filtered,
++        6.0,
++        NetworkType::Unsigned,
++        TomType::Signed,
++        TomDenom::Min,
++        30,
++        0.25,
++        2,
++        0.995,
++        threads,
++    );
++    timings.push(("module_detection_total".into(), t.elapsed().as_secs_f64()));
++
++    // 6. module eigengenes + module-trait
++    let t = Instant::now();
++    let trait_data = read_trait(traitpath).unwrap();
++    assert_eq!(trait_data.0,exp.samples,"trait sample order differs");
++    let traits = trait_data.1;
++    let tdata = trait_data.2;
++    // final module order (alphabetical non-grey)
++    let mut mods: Vec<String> = colors.iter().cloned().collect();
++    mods.sort();
++    mods.dedup();
++    let mods: Vec<String> = mods.into_iter().filter(|c| c != "grey").collect();
++    let k = mods.len();
++    let mut mes = Mat::<f64>::zeros(n, k);
++    for (mi, m) in mods.iter().enumerate() {
++        let midx: Vec<usize> = (0..g).filter(|&i| colors[i] == *m).collect();
++        let me = module_eigengene(&filtered, &midx);
++        for j in 0..n {
++            mes[(j, mi)] = me[j];
++        }
++    }
++    let (mt_cor, mt_p) = module_trait_cor(&mes, &tdata);
++    timings.push(("module_trait".into(), t.elapsed().as_secs_f64()));
++
++    write_mat(&format!("{outdir}/eigengenes.tsv"),&mes,&exp.samples,&mods);
++    let km=rs_wgcna::kme::kme(&filtered,&mes);
++    write_mat(&format!("{outdir}/kme.tsv"),&km,&filtered_genes,&mods);
++    let intra=Mat::from_fn(g,1,|i,_|(0..g).filter(|&j|i!=j && colors[i]==colors[j]).map(|j|cor[(i,j)].abs().powi(6)).sum::<f64>());
++    write_mat(&format!("{outdir}/intramodular.tsv"),&intra,&filtered_genes,&["within".into()]);
++    // write outputs
++    let mut f = std::fs::File::create(format!("{outdir}/filtered_genes.txt")).unwrap();
++    for gi in &filtered_genes {
++        use std::io::Write;
++        writeln!(f, "{gi}").unwrap();
++    }
++    let mut f = std::fs::File::create(format!("{outdir}/module_colors.txt")).unwrap();
++    for (gi, c) in filtered_genes.iter().zip(colors.iter()) {
++        use std::io::Write;
++        writeln!(f, "{gi}\t{c}").unwrap();
++    }
++    write_mat(
++        &format!("{outdir}/module_trait_cor.tsv"),
++        &mt_cor,
++        &mods,
++        &traits,
++    );
++    write_mat(
++        &format!("{outdir}/module_trait_p.tsv"),
++        &mt_p,
++        &mods,
++        &traits,
++    );
++    let mut f = std::fs::File::create(format!("{outdir}/timings.tsv")).unwrap();
++    use std::io::Write;
++    writeln!(f, "step\tseconds").unwrap();
++    for (s, v) in &timings {
++        writeln!(f, "{s}\t{v:.4}").unwrap();
++    }
++    let mut f = std::fs::File::create(format!("{outdir}/module_sizes.tsv")).unwrap();
++    writeln!(f, "module\tsize").unwrap();
++    for m in &mods {
++        let sz = colors.iter().filter(|&c| c == m).count();
++        writeln!(f, "{m}\t{sz}").unwrap();
++    }
++
++    eprintln!(
++        "rust: {} genes -> {} MAD-top, {} modules, threads={}",
++        exp.n_genes(),
++        g,
++        mods.len(),
++        threads
++    );
++}
++
++fn write_mat(path: &str, m: &Mat<f64>, rows: &[String], cols: &[String]) {
++    use std::io::Write;
++    let mut f = std::fs::File::create(path).unwrap();
++    write!(f, "ID").unwrap();
++    for c in cols {
++        write!(f, "\t{c}").unwrap();
++    }
++    writeln!(f).unwrap();
++    for i in 0..m.nrows() {
++        write!(f, "{}", rows[i]).unwrap();
++        for j in 0..m.ncols() {
++            write!(f, "\t{:.17}", m[(i, j)]).unwrap();
++        }
++        writeln!(f).unwrap();
++    }
++}
+diff --git a/examples/audit_reassignment.rs b/examples/audit_reassignment.rs
+new file mode 100644
+index 0000000..c88731c
+--- /dev/null
++++ b/examples/audit_reassignment.rs
+@@ -0,0 +1,20 @@
++//! TEST-ONLY kME threshold measurements on saved module-stage labels.
++use faer::Mat;
++use rs_wgcna::{eigengene::module_eigengene,filter::{normalize,NormalizeMethod},io::read_expression,stats::{pearson_vec,cor_pvalue_fisher}};
++use std::collections::HashMap;
++fn main(){
++ let a:Vec<String>=std::env::args().collect();let exp=read_expression(&a[1]).unwrap();let norm=normalize(&exp.data,NormalizeMethod::Log10p1);
++ let genes:Vec<String>=std::fs::read_to_string(format!("{}/filtered_genes.txt",a[2])).unwrap().lines().map(String::from).collect();
++ let index:HashMap<&String,usize>=exp.genes.iter().enumerate().map(|(i,g)|(g,i)).collect();
++ let expr=Mat::from_fn(genes.len(),norm.ncols(),|i,j|norm[(*index.get(&genes[i]).unwrap(),j)]);
++ let gi=genes.iter().position(|g|g=="ENSG00000149541").unwrap();let gene:Vec<f64>=(0..expr.ncols()).map(|j|expr[(gi,j)]).collect();
++ println!("stage\tgene\town_label\tbest_label\town_kME\tbest_kME\tp_own\tp_best\tratio\tthreshold\tdistance\treassign");
++ for stage in ["dynamic","cleanup"] {
++  let mut rdr=csv::ReaderBuilder::new().delimiter(b'\t').from_path(format!("{}/{stage}.tsv",a[2])).unwrap();
++  let labels:Vec<i32>=rdr.records().enumerate().map(|(i,r)|{let r=r.unwrap();assert_eq!(&r[0],genes[i]);{let z:f64=r[1].parse().unwrap();assert_eq!(z.fract(),0.0);z as i32}}).collect();
++  let mut mods:Vec<i32>=labels.iter().copied().filter(|&x|x>0).collect();mods.sort();mods.dedup();
++  let k:Vec<f64>=mods.iter().map(|&m|{let idx:Vec<usize>=labels.iter().enumerate().filter(|(_,v)|**v==m).map(|(i,_)|i).collect();let me=module_eigengene(&expr,&idx);pearson_vec(&gene,&me).abs()}).collect();
++  let own=mods.iter().position(|&m|m==labels[gi]).unwrap();let best=(0..k.len()).max_by(|&i,&j|k[i].partial_cmp(&k[j]).unwrap()).unwrap();let pown=cor_pvalue_fisher(k[own],expr.ncols());let pbest=cor_pvalue_fisher(k[best],expr.ncols());let ratio=pbest/pown;
++  println!("{}\t{}\t{}\t{}\t{:.17}\t{:.17}\t{:.17e}\t{:.17e}\t{:.17e}\t1e-6\t{:.17e}\t{}",stage,genes[gi],labels[gi],mods[best],k[own],k[best],pown,pbest,ratio,ratio-1e-6,ratio<1e-6);
++ }
++}
+diff --git a/examples/audit_stats.rs b/examples/audit_stats.rs
+new file mode 100644
+index 0000000..5b7d3b4
+--- /dev/null
++++ b/examples/audit_stats.rs
+@@ -0,0 +1,9 @@
++//! TEST-ONLY independent statistical parameter grid.
++fn main(){
++ println!("ID\tr\tn\tstudent\tfisher");let mut i=0;
++ for n in [3,4,5,10,20,40,56,100,1000] {
++  for r in [0.0_f64,1e-8,1e-6,1e-4,0.001,0.005,0.01,0.02,0.05,0.1,0.25,0.5,0.9,0.99] {
++   for sign in [-1.0,1.0] {i+=1;let x=r*sign;println!("{}\t{:.17}\t{}\t{:.17}\t{:.17}",i,x,n,rs_wgcna::stats::cor_pvalue(x,n),rs_wgcna::stats::cor_pvalue_fisher(x,n));}
++  }
++ }
++}
+diff --git a/tests/audit_numeric_contract.rs b/tests/audit_numeric_contract.rs
+new file mode 100644
+index 0000000..313975a
+--- /dev/null
++++ b/tests/audit_numeric_contract.rs
+@@ -0,0 +1,30 @@
++//! Scientific parity regression discovered by the audit. Intentionally fails on
++//! the audited commit: public APIs accept f64 but truncate fractional powers.
++use faer::Mat;
++use rs_wgcna::network::{NetworkType,TomType,TomDenom};
++fn fixture()->Mat<f64>{Mat::from_fn(2,2,|i,j|if i==j {1.0}else{0.25})}
++#[test]
++fn audit_fractional_adjacency_matches_reference() {
++ let actual=rs_wgcna::adjacency::adjacency(&fixture(),2.5,NetworkType::Unsigned);
++ assert!((actual[(0,1)]-0.03125).abs()<1e-12,"R |0.25|^2.5=0.03125; Rust={}",actual[(0,1)]);
++}
++#[test]
++fn audit_fractional_tom_none_matches_reference() {
++ let actual=rs_wgcna::tom::tom_from_cor(&fixture(),2.5,NetworkType::Unsigned,TomType::None,TomDenom::Min,1);
++ assert!((actual[(0,1)]-0.03125).abs()<1e-12,"R TOMType none gives adjacency 0.03125; Rust={}",actual[(0,1)]);
++}
++#[test]
++fn audit_near_zero_student_pvalue_matches_reference() {
++ // WGCNA::corPvalueStudent(1e-8,5); two-sided p approaches one.
++ let actual=rs_wgcna::stats::cor_pvalue(1e-8,5);
++ let reference=0.9999999872676045_f64;
++ assert!((actual-reference).abs()<1e-9,"R near-zero correlation p≈1; Rust={actual}");
++}
++#[test]
++fn audit_signed_nowick2_unsigned_network_matches_reference() {
++ // R TOMsimilarityFromExpr(cbind(as.numeric(1:4),-as.numeric(1:4)), networkType="unsigned",
++ // TOMType="signed Nowick 2", power=6) returns off-diagonal +0.5.
++ let cor=Mat::from_fn(2,2,|i,j|if i==j {1.0}else{-1.0});
++ let actual=rs_wgcna::tom::tom_from_cor(&cor,6.0,NetworkType::Unsigned,TomType::SignedNowick2,TomDenom::Min,1);
++ assert!((actual[(0,1)]-0.5).abs()<1e-9,"R Nowick2 TOM=+0.5; Rust={}",actual[(0,1)]);
++}
+diff --git a/scripts/audit_real_reference.R b/scripts/audit_real_reference.R
+new file mode 100644
+index 0000000..b199ac2
+--- /dev/null
++++ b/scripts/audit_real_reference.R
+@@ -0,0 +1,93 @@
++# TEST-ONLY diagnostic extension of scripts/real_bench.R.
++#!/usr/bin/env Rscript
++# Real-data benchmark: FPKM -> log10(x+1) -> MAD top-N -> WGCNA -> module-trait.
++# Matches the Rust `real_bench` example exactly (minModuleSize=30,
++# mergeCutHeight=0.25, deepSplit=2, detectCutHeight=0.995).
++
++args <- commandArgs(trailingOnly = TRUE)
++if (length(args) < 3) stop("usage: real_bench.R <fpkm.tsv> <trait.tsv> <outdir> [n_keep]")
++fpkmpath <- args[1]
++traitpath <- args[2]
++outdir <- args[3]
++n_keep <- if (length(args) >= 4) as.integer(args[4]) else 8000
++
++suppressMessages(library(WGCNA))
++
++dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
++timings <- list()
++
++t <- proc.time()
++expr <- read.table(fpkmpath, header = TRUE, row.names = 1, check.names = FALSE)
++stopifnot(!anyDuplicated(rownames(expr)), !anyDuplicated(colnames(expr)),all(is.finite(as.matrix(expr))))
++datExpr <- t(expr)  # samples x genes
++datExpr <- log10(datExpr + 1)
++timings[["log10_normalize"]] <- (proc.time() - t)[["elapsed"]]
++
++t <- proc.time()
++mads <- apply(datExpr, 2, stats::mad)
++keep <- order(mads, decreasing = TRUE)[seq_len(n_keep)]
++datExpr <- datExpr[, keep, drop = FALSE]
++genes <- colnames(datExpr)
++timings[["mad_topN"]] <- (proc.time() - t)[["elapsed"]]
++
++t <- proc.time()
++cor_mat <- cor(datExpr, use = "p")
++timings[["cor"]] <- (proc.time() - t)[["elapsed"]]
++
++t <- proc.time()
++tom <- TOMsimilarityFromExpr(datExpr, networkType = "unsigned", TOMType = "signed",
++    TOMDenom = "min", power = 6)
++timings[["tom"]] <- (proc.time() - t)[["elapsed"]]
++
++write_mat <- function(m,file) write.table(data.frame(ID=rownames(m),m,check.names=FALSE),file,sep="\t",row.names=FALSE,quote=FALSE)
++probe<-seq(1,ncol(datExpr),by=max(1,ncol(datExpr)%/%64));dimnames(tom)<-list(genes,genes)
++write_mat(cor_mat[probe,,drop=FALSE],file.path(outdir,"cor_probe.tsv"));write_mat(tom[probe,,drop=FALSE],file.path(outdir,"tom_probe.tsv"))
++tree<-hclust(as.dist(1-tom),method="average")
++write.table(data.frame(ID=seq_along(tree$height),left=tree$merge[,1],right=tree$merge[,2],height=tree$height),file.path(outdir,"tree.tsv"),sep="\t",quote=FALSE,row.names=FALSE)
++dynamic<-cutreeDynamic(tree,distM=1-tom,deepSplit=2,minClusterSize=30,cutHeight=.995,pamRespectsDendro=TRUE,verbose=0)
++write_mat(matrix(dynamic,ncol=1,dimnames=list(genes,"label")),file.path(outdir,"dynamic.tsv"))
++sft<-pickSoftThreshold(datExpr,networkType="unsigned",powerVector=c(1:10,seq(12,20,2)),verbose=0)$fitIndices
++write.table(sft,file.path(outdir,"sft.tsv"),sep="\t",quote=FALSE,row.names=FALSE)
++t <- proc.time()
++source("validation/audit/instrument_reference.R"); reference_diagnostic <- instrument_blockwise()
++net <- reference_diagnostic(datExpr, power = 6, networkType = "unsigned", TOMType = "signed",
++    TOMDenom = "min", minModuleSize = 30, mergeCutHeight = 0.25,
++    maxBlockSize = ncol(datExpr), deepSplit = 2, detectCutHeight = 0.995,
++    numericLabels = FALSE, verbose = 0)
++timings[["module_detection_total"]] <- (proc.time() - t)[["elapsed"]]
++
++t <- proc.time()
++trait_df <- read.table(traitpath, header = TRUE, row.names = 1, check.names = FALSE)
++stopifnot(!anyDuplicated(rownames(trait_df)),setequal(rownames(datExpr),rownames(trait_df)))
++datTraits <- trait_df[rownames(datExpr), , drop = FALSE]
++me <- moduleEigengenes(datExpr, net$colors)
++MEs <- as.matrix(me$eigengenes)
++mt_cor <- cor(MEs, datTraits, use = "p")
++mt_p <- corPvalueStudent(mt_cor, nrow(datExpr))
++timings[["module_trait"]] <- (proc.time() - t)[["elapsed"]]
++
++# Export actual blockwiseModules premerge and final states. unmergedColors is
++# after cleanup/reassignment, NOT the raw dynamic tree cut.
++write.table(data.frame(ID=genes,color=net$unmergedColors),file.path(outdir,"premerge.tsv"),sep="\t",quote=FALSE,row.names=FALSE)
++colnames(MEs)<-substring(colnames(MEs),3)
++write_mat(MEs,file.path(outdir,"eigengenes.tsv"))
++km<-as.matrix(signedKME(datExpr,MEs));colnames(km)<-colnames(MEs)
++write_mat(km,file.path(outdir,"kme.tsv"))
++adj<-abs(cor_mat)^6;diag(adj)<-0
++within<-vapply(seq_along(genes),function(i)sum(adj[i,net$colors==net$colors[i]]),numeric(1))
++write_mat(matrix(within,ncol=1,dimnames=list(genes,"within")),file.path(outdir,"intramodular.tsv"));rm(adj)
++# outputs (match Rust format)
++writeLines(genes, file.path(outdir, "filtered_genes.txt"))
++write.table(data.frame(gene = genes, color = net$colors), file.path(outdir, "module_colors.txt"),
++    sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
++write.table(data.frame(ID = rownames(mt_cor), mt_cor, check.names = FALSE),
++    file.path(outdir, "module_trait_cor.tsv"), sep = "\t", row.names = FALSE, quote = FALSE)
++write.table(data.frame(ID = rownames(mt_p), mt_p, check.names = FALSE),
++    file.path(outdir, "module_trait_p.tsv"), sep = "\t", row.names = FALSE, quote = FALSE)
++write.table(data.frame(step = names(timings), seconds = unlist(timings)),
++    file.path(outdir, "timings.tsv"), sep = "\t", row.names = FALSE, quote = FALSE)
++sizes <- table(net$colors)
++write.table(data.frame(module = names(sizes), size = as.integer(sizes)),
++    file.path(outdir, "module_sizes.tsv"), sep = "\t", row.names = FALSE, quote = FALSE)
++
++cat("R: modules =", paste(names(sizes), collapse = ","), "\n")
+diff --git a/validation/audit/aggregate_results.py b/validation/audit/aggregate_results.py
+new file mode 100644
+index 0000000..21350d8
+--- /dev/null
++++ b/validation/audit/aggregate_results.py
+@@ -0,0 +1,87 @@
++from run_audit import ROOT,A
++import csv,json,pathlib,re,hashlib,statistics,subprocess,platform,os
++
++def read(p):
++ with open(p,newline='') as f:return list(csv.DictReader(f))
++def write(p,rows,fields=None):
++ if fields is None:fields=list(dict.fromkeys(k for r in rows for k in r))
++ with open(p,'w',newline='') as f:
++  w=csv.DictWriter(f,fieldnames=fields);w.writeheader();w.writerows(rows)
++# Keep every command attempt (including recovered failures), not merely latest.
++events=[]
++for line in (A/'test_execution_log.txt').read_text().splitlines():
++ if line.startswith('{"name":'):
++  try:z=json.loads(line)
++  except ValueError:continue
++  if 'command' in z and 'exit_code' in z:events.append(z)
++(A/'test_manifest.json').write_text(json.dumps(events,indent=2,ensure_ascii=False))
++summary=[];details=[];dis=[]
++paths=[A/'artifacts/hardened_final/comparison']+list((A/'artifacts').glob('matrix_*/comparison'))+list((A/'artifacts').glob('*_comparison*'))+[A/'artifacts/trait_reordered/comparison']
++for d in paths:
++ if not d.is_dir():continue
++ if (d/'parity_details.csv').exists():
++  for z in read(d/'parity_details.csv'):details.append(dict(evidence=str((d/'parity_details.csv').relative_to(ROOT)),case=str(d.relative_to(A)),**z))
++ if (d/'extra_details.csv').exists():
++  for z in read(d/'extra_details.csv'):details.append(dict(evidence=str((d/'extra_details.csv').relative_to(ROOT)),case=str(d.relative_to(A)),**z))
++ for name in ['module','dynamic']:
++  f=d/f'{name}_summary.csv'
++  if f.exists():
++   for z in read(f):summary.append(dict(case=str(d.relative_to(A)),kind=name,evidence=str(f.relative_to(ROOT)),**z))
++ f=d/'module_disagreements.tsv'
++ if f.exists():
++  with f.open() as h:
++   for z in csv.DictReader(h,delimiter='\t'):dis.append(dict(case=str(d.relative_to(A)),evidence=str(f.relative_to(ROOT)),**z))
++f=A/'artifacts/stats_grid/parity_details.csv'
++if f.exists():
++ for z in read(f):details.append(dict(evidence=str(f.relative_to(ROOT)),case='stats_grid',**z))
++write(A/'parity_details.csv',details);write(A/'parity_summary.csv',summary)
++with (A/'module_disagreements.tsv').open('w',newline='') as f:
++ w=csv.DictWriter(f,fieldnames=['case','evidence','gene','rust','R'],delimiter='\t');w.writeheader();w.writerows(dis)
++# Performance: no cor/TOM double count in non-overlapping total. Preserve per
++# repeat data and annotate default timings that overlapped audit work.
++raw=[]
++for folder in (A/'artifacts').glob('*_*_*_*'):
++ m=re.fullmatch(r'(real|perfB)_(8000|12000)_(rust|r)_([123])',folder.name)
++ if not m or not (folder/'timings.tsv').exists():continue
++ with (folder/'timings.tsv').open() as f:ts=list(csv.DictReader(f,delimiter='\t'))
++ vals={v['step']:float(v['seconds']) for v in ts}
++ vals['nonoverlap_total']=sum(vals[k] for k in ['log10_normalize','mad_topN','module_detection_total','module_trait'])
++ for step,sec in vals.items():raw.append(dict(scenario='A' if m[1]=='real' else 'B',genes=int(m[2]),implementation=m[3],repeat=int(m[4]),step=step,seconds=sec,evidence=str((folder/'timings.tsv').relative_to(ROOT))))
++write(A/'benchmark_details.csv',raw)
++groups={}
++for r in raw:groups.setdefault((r['scenario'],r['genes'],r['implementation'],r['step']),[]).append(r['seconds'])
++bench=[]
++for (scenario,n,impl,step),v in sorted(groups.items()):
++ bench.append(dict(scenario=scenario,genes=n,implementation=impl,step=step,repeats=len(v),median_seconds=statistics.median(v),min_seconds=min(v),max_seconds=max(v),sd_seconds=statistics.stdev(v) if len(v)>1 else '',threads=8 if scenario=='B' or impl=='rust' else 1,BLAS='faer' if impl=='rust' else ('reference libRblas' if scenario=='A' else 'Accelerate'),measurement_note='audit workloads overlapped some repeats; descriptive only' if scenario=='A' else 'sequential controlled-thread audit runs; other desktop activity uncontrolled'))
++write(A/'benchmark_summary.csv',bench)
++# Machine-level environment and file hashes.
++env=json.loads((A/'environment.json').read_text());env.update(cpu='Apple M2',logical_cores=8,ram_bytes=17179869184,rustc='1.99.1 (58cf8f9c3 2026-10-13)',cargo='1.99.1',default_R=json.loads((A/'artifacts/R_environment_default.json').read_text()),scenario_B_R=json.loads((A/'artifacts/R_environment_accelerate8.json').read_text()),diagnostic_R=dict(BLAS='Accelerate',VECLIB_MAXIMUM_THREADS=1,WGCNA_threads=1),date_local='2026-10-28',timezone='Asia/Shanghai')
++(A/'environment.json').write_text(json.dumps(env,indent=2,ensure_ascii=False))
++hashes={}
++for pat in ['src/**/*.rs','Demo/*','bench_out/**/*','scripts/*','examples/audit*.rs','tests/audit*.rs','report/benchmark.qmd','Cargo.toml','Cargo.lock']:
++ for p in ROOT.glob(pat):
++  if p.is_file():hashes[str(p.relative_to(ROOT))]=hashlib.sha256(p.read_bytes()).hexdigest()
++(A/'file_hashes.json').write_text(json.dumps(hashes,indent=2))
++checks=[]
++def count(group,statuses):
++ checks.append(dict(group=group,**{s:statuses.count(s) for s in ['PASS','FAIL','SKIPPED','NOT SUPPORTED','NOT EXECUTED']}))
++count('original Rust unit baseline',['PASS']*12)
++count('original synthetic baseline',['PASS']*9)
++# Actual final Rust regression counts come from executable log, not intent.
++f=A/'artifacts/cargo_verified_final.log'
++if f.exists():
++ statuses=[]
++ for p,q in re.findall(r'test result: (?:ok|FAILED)\. (\d+) passed; (\d+) failed;',f.read_text()):statuses+=['PASS']*int(p)+['FAIL']*int(q)
++ count('final cargo tests (original + new regressions)',statuses)
++f=A/'parameter_coverage.csv'
++if f.exists():count('parameter configurations',[x['status'] for x in read(f)])
++f=A/'artifacts/negative_controls/summary.csv'
++if f.exists():count('validator controls including expected failures',[x['status'] for x in read(f)])
++count('comparison rows current artifacts (historical excluded)',[x['status'] for x in details if 'historical' not in x['case']])
++count('statistical grid cases Student',[('PASS' if float(x['student_abs_error'])<=1e-9 else 'FAIL') for x in read(A/'artifacts/stats_grid/all_cases.csv')])
++count('statistical grid cases Fisher',[('PASS' if float(x['fisher_abs_error'])<=1e-9 else 'FAIL') for x in read(A/'artifacts/stats_grid/all_cases.csv')])
++count('additional default 12K repetitions omitted by runtime policy',['SKIPPED']*2)
++f=A/'remote_final.json'
++if f.exists():count('end-of-audit remote recheck',[json.loads(f.read_text())['status']])
++write(A/'test_counts.csv',checks)
++print('aggregated',len(events),'commands',len(details),'comparison rows',len(summary),'partition summaries')
+diff --git a/validation/audit/check_remote.py b/validation/audit/check_remote.py
+new file mode 100644
+index 0000000..8df7219
+--- /dev/null
++++ b/validation/audit/check_remote.py
+@@ -0,0 +1,10 @@
++import subprocess,json,pathlib,sys
++p=pathlib.Path(__file__).resolve().parent
++cmd=['git','-c','http.version=HTTP/1.1','ls-remote','origin','HEAD','refs/heads/master']
++try:
++ r=subprocess.run(cmd,text=True,capture_output=True,timeout=20)
++ head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
++ result=dict(command=cmd,local_commit=head,remote_output=r.stdout,stderr=r.stderr,exit_code=r.returncode,status='PASS' if r.returncode==0 and all(line.split()[0]==head for line in r.stdout.splitlines()) and len(r.stdout.splitlines())==2 else ('FAIL' if r.returncode==0 else 'SKIPPED'),reason='' if r.returncode==0 else 'network error; successful start-of-audit remote proof retained')
++except subprocess.TimeoutExpired:
++ result=dict(command=cmd,status='SKIPPED',reason='20-second network timeout; successful start-of-audit remote proof retained')
++(p/'remote_final.json').write_text(json.dumps(result,indent=2));print(json.dumps(result));sys.exit(0 if result['status']=='PASS' else 1)
+diff --git a/validation/audit/compare_completed.py b/validation/audit/compare_completed.py
+new file mode 100644
+index 0000000..d3c3013
+--- /dev/null
++++ b/validation/audit/compare_completed.py
+@@ -0,0 +1,14 @@
++from run_audit import *
++for n in [8000,12000]:
++ for prefix in ['real','perfB']:
++  for rep in [1,2,3]:
++   x=A/'artifacts'/f'{prefix}_{n}_rust_{rep}';y=A/'artifacts'/f'{prefix}_{n}_r_{rep}';dest=A/'artifacts'/f'{prefix}_{n}_comparison_{rep}'
++   if (x/'timings.tsv').exists() and (y/'timings.tsv').exists() and not (dest/'parity_details.csv').exists():
++    run(f'{prefix}_{n}_compare_{rep}',f'Rscript validation/audit/compare_real.R {x} {y} {dest}')
++ for name,x,y in [('historical',ROOT/'bench_out'/('rust12k' if n==12000 else 'rust'),ROOT/'bench_out'/('r12k' if n==12000 else 'r')),('diagnostic',A/'artifacts'/f'diagnostic_{n}_rust',A/'artifacts'/f'diagnostic_{n}_r')]:
++  if (A/'artifacts'/f'{name}_{n}_comparison'/'parity_details.csv').exists(): continue
++  run(f'{name}_{n}_compare_verified',f'Rscript validation/audit/compare_real.R {x} {y} {A}/artifacts/{name}_{n}_comparison')
++
++# A driver must not turn recorded required command failures into success.
++import sys
++sys.exit(1 if any(e["exit_code"] != 0 for e in events) else 0)
+diff --git a/validation/audit/monitor_memory.py b/validation/audit/monitor_memory.py
+new file mode 100644
+index 0000000..72602fb
+--- /dev/null
++++ b/validation/audit/monitor_memory.py
+@@ -0,0 +1,16 @@
++import subprocess,time,os,json,pathlib
++from run_audit import A
++pid=34401;observations={}
++while True:
++ s=subprocess.run(['ps','-axo','pid=,rss=,stat=,command='],text=True,stdout=subprocess.PIPE).stdout
++ live=False
++ for line in s.splitlines():
++  bits=line.strip().split(None,3)
++  if len(bits)<4:continue
++  p,rss,state,cmd=bits
++  if int(p)==pid and not state.startswith('Z'):live=True
++  if ('target/release/examples/audit_perf Demo/' in cmd or '--slave -f scripts/real_bench.R --args Demo/' in cmd) and not cmd.startswith('/bin/zsh'):
++   k=p+' '+cmd;z=observations.setdefault(k,dict(pid=int(p),command=cmd,max_sampled_rss_bytes=0,samples=0));z['max_sampled_rss_bytes']=max(z['max_sampled_rss_bytes'],int(rss)*1024);z['samples']+=1
++ (A/'artifacts/perfB_sampled_memory.json').write_text(json.dumps(dict(note='1 second ps RSS samples; lower-bound observations, not exact process peak; monitoring started after first Rust repeat',processes=list(observations.values())),indent=2))
++ if not live:break
++ time.sleep(1)
+diff --git a/validation/audit/prepare_matrix.py b/validation/audit/prepare_matrix.py
+new file mode 100644
+index 0000000..169927a
+--- /dev/null
++++ b/validation/audit/prepare_matrix.py
+@@ -0,0 +1,46 @@
++from pathlib import Path
++root=Path(__file__).resolve().parents[2]
++s=(root/'src/main.rs').read_text()
++s=s.replace('let nt = NetworkType::Unsigned;', '''let nt = NetworkType::from_str(&args[6]).unwrap();
++    let tt = TomType::from_str(&args[7]).unwrap();
++    let td = TomDenom::from_str(&args[8]).unwrap();
++    let deep: usize = args[9].parse().unwrap();
++    let merge: f64 = args[10].parse().unwrap();''')
++s=s.replace('TomType::Signed, TomDenom::Min, threads','tt, td, threads')
++s=s.replace('        TomType::Signed,\n        TomDenom::Min,','        tt,\n        td,').replace('        0.15,\n        2,','        merge,\n        deep,')
++pos='    // --- soft threshold (fit indices) ---'
++extra='''    let diss = Mat::from_fn(tom.nrows(), tom.ncols(), |i,j| 1.0-tom[(i,j)]);
++    let tree = rs_wgcna::hclust::hclust_average(&diss);
++    let labs = rs_wgcna::cutree::cutree_hybrid(&tree.merge,&tree.height,&diss,20,deep,0.995,true,true);
++    let mut f = std::fs::File::create(format!("{outdir}/tree.tsv")).unwrap();
++    writeln!(f,"ID\\tleft\\tright\\theight").unwrap();
++    for (i, ((l,r),h)) in tree.merge.iter().zip(tree.height.iter()).enumerate() { writeln!(f,"{}\\t{}\\t{}\\t{:.17}",i+1,l,r,h).unwrap(); }
++    let mut f = std::fs::File::create(format!("{outdir}/dynamic.tsv")).unwrap();
++    writeln!(f,"ID\\tlabel").unwrap();
++    for (g,l) in exp.genes.iter().zip(labs.iter()) {writeln!(f,"{}\\t{}",g,l).unwrap();}
++    let conn = Mat::from_fn(adj.nrows(),1,|i,_| (0..adj.ncols()).filter(|&j| j!=i).map(|j|adj[(i,j)]).sum::<f64>());
++    write_mat(&format!("{outdir}/connectivity.tsv"), &conn, &exp.genes, &["total".into()]).unwrap();
++'''
++s=s.replace(pos,extra+pos)
++(root/'examples/audit_matrix.rs').write_text('// TEST-ONLY parameterized extension of src/main.rs. Generated by validation/audit/prepare_matrix.py.\n'+s)
++import subprocess
++p=root/'scripts/r_reference.R';s=subprocess.check_output(['git','show','HEAD:scripts/r_reference.R'],cwd=root,text=True);s=s.replace('suppressMessages(library(WGCNA))','''suppressMessages(library(WGCNA))
++nt <- if(length(args)>=6) args[6] else "unsigned"
++tt <- if(length(args)>=7) args[7] else "signed"
++td <- if(length(args)>=8) args[8] else "min"
++deep <- if(length(args)>=9) as.integer(args[9]) else 2
++merge_height <- if(length(args)>=10) as.numeric(args[10]) else .15''')
++s=s.replace('networkType = "unsigned"','networkType = nt').replace('TOMType = "signed"','TOMType = tt').replace('TOMDenom = "min"','TOMDenom = td').replace('type = "unsigned"','type = nt').replace('mergeCutHeight = 0.15','mergeCutHeight = merge_height').replace('deepSplit = 2','deepSplit = deep')
++s=s.replace('cor_mat <- cor(datExpr, use = "p")','''stopifnot(!anyDuplicated(genes), !anyDuplicated(rownames(datExpr)), all(is.finite(as.matrix(datExpr))))
++cor_mat <- cor(datExpr, use = "p")''')
++s=s.replace('datTraits <- trait_df[rownames(datExpr), , drop = FALSE]','''stopifnot(!anyDuplicated(rownames(trait_df)), setequal(rownames(trait_df),rownames(datExpr)))
++        datTraits <- trait_df[rownames(datExpr), , drop = FALSE]''')
++s=s.replace('# --- soft threshold ---','''# Extra labelled test diagnostics, without changing reference algorithms.
++tree <- hclust(as.dist(1-tom),method="average")
++write.table(data.frame(ID=seq_along(tree$height),left=tree$merge[,1],right=tree$merge[,2],height=tree$height),file.path(outdir,"tree.tsv"),sep="\\t",quote=FALSE,row.names=FALSE)
++dyn <- cutreeDynamic(tree,distM=1-tom,deepSplit=deep,minClusterSize=20,cutHeight=.995,pamRespectsDendro=TRUE,verbose=0)
++write_mat(matrix(dyn,ncol=1,dimnames=list(genes,"label")),file.path(outdir,"dynamic.tsv"))
++write_mat(matrix(rowSums(adj)-diag(adj),ncol=1,dimnames=list(genes,"total")),file.path(outdir,"connectivity.tsv"))
++
++# --- soft threshold ---''')
++p.write_text(s)
+diff --git a/validation/audit/prepare_perf.py b/validation/audit/prepare_perf.py
+new file mode 100644
+index 0000000..e489b21
+--- /dev/null
++++ b/validation/audit/prepare_perf.py
+@@ -0,0 +1,8 @@
++from pathlib import Path
++root=Path(__file__).resolve().parents[2]
++s=(root/'examples/real_bench.rs').read_text();old='''let threads = std::thread::available_parallelism()
++        .map(|n| n.get())
++        .unwrap_or(1);''';new='''let threads: usize = std::env::var("AUDIT_THREADS").unwrap_or("8".into()).parse().unwrap();
++    rayon::ThreadPoolBuilder::new().num_threads(threads).build_global().unwrap();'''
++assert old in s;s=s.replace(old,new)
++(root/'examples/audit_perf.rs').write_text('// TEST-ONLY benchmark with explicit thread control; otherwise identical timing boundaries.\n'+s)
+diff --git a/validation/audit/prepare_real_diagnostics.py b/validation/audit/prepare_real_diagnostics.py
+new file mode 100644
+index 0000000..53c2e03
+--- /dev/null
++++ b/validation/audit/prepare_real_diagnostics.py
+@@ -0,0 +1,67 @@
++from pathlib import Path
++root=Path(__file__).resolve().parents[2]
++s=(root/'examples/real_bench.rs').read_text()
++s=s.replace('let _tom = tom_from_cor(', 'let tom = tom_from_cor(')
++s=s.replace('    // 5. full module detection', '''    let probe: Vec<usize> = (0..g).step_by((g/64).max(1)).collect();
++    let probe_genes: Vec<String> = probe.iter().map(|&i|filtered_genes[i].clone()).collect();
++    for (name,mat) in [("cor_probe",&cor),("tom_probe",&tom)] {
++        let sample = Mat::from_fn(probe.len(),g,|i,j|mat[(probe[i],j)]);
++        write_mat(&format!("{outdir}/{name}.tsv"),&sample,&probe_genes,&filtered_genes);
++    }
++    let diss = Mat::from_fn(g,g,|i,j|1.0-tom[(i,j)]);
++    let tree = rs_wgcna::hclust::hclust_average(&diss);
++    let labels = rs_wgcna::cutree::cutree_hybrid(&tree.merge,&tree.height,&diss,30,2,0.995,true,true);
++    let mut f = std::fs::File::create(format!("{outdir}/tree.tsv")).unwrap();
++    writeln!(f,"ID\\tleft\\tright\\theight").unwrap();
++    for (i,((a,b),h)) in tree.merge.iter().zip(tree.height.iter()).enumerate() {writeln!(f,"{}\\t{}\\t{}\\t{:.17}",i+1,a,b,h).unwrap();}
++    let dynamic = Mat::from_fn(g,1,|i,_|labels[i] as f64);
++    write_mat(&format!("{outdir}/dynamic.tsv"),&dynamic,&filtered_genes,&["label".into()]);
++    let mut cleaned = labels.clone();
++    rs_wgcna::pipeline::cleanup_by_kme(&filtered,&mut cleaned,30,NetworkType::Unsigned);
++    let cleaned = Mat::from_fn(g,1,|i,_|cleaned[i] as f64);
++    write_mat(&format!("{outdir}/cleanup.tsv"),&cleaned,&filtered_genes,&["label".into()]);
++    let powers:Vec<f64>=(1..=10).map(|x|x as f64).chain((12..=20).step_by(2).map(|x|x as f64)).collect();
++    let (_,sft)=rs_wgcna::sft::pick_soft_threshold(&cor,NetworkType::Unsigned,&powers,0.85,10,false);
++    let sm=Mat::from_fn(sft.len(),6,|i,j|sft[i][j+1]);
++    write_mat(&format!("{outdir}/sft.tsv"),&sm,&powers.iter().map(|p|p.to_string()).collect::<Vec<_>>(),&["R.sq","slope","truncated.R.sq","mean.k","median.k","max.k"].map(String::from));
++    drop(diss);
++    // 5. full module detection''')
++s=s.replace('    let traits = trait_data.1;', '''    assert_eq!(trait_data.0,exp.samples,"trait sample order differs");
++    let traits = trait_data.1;''')
++s=s.replace('    // write outputs', '''    write_mat(&format!("{outdir}/eigengenes.tsv"),&mes,&exp.samples,&mods);
++    let km=rs_wgcna::kme::kme(&filtered,&mes);
++    write_mat(&format!("{outdir}/kme.tsv"),&km,&filtered_genes,&mods);
++    let intra=Mat::from_fn(g,1,|i,_|(0..g).filter(|&j|i!=j && colors[i]==colors[j]).map(|j|cor[(i,j)].abs().powi(6)).sum::<f64>());
++    write_mat(&format!("{outdir}/intramodular.tsv"),&intra,&filtered_genes,&["within".into()]);
++    // write outputs''')
++s=s.replace('{:.6}', '{:.17}')
++(root/'examples/audit_real.rs').write_text('// TEST-ONLY diagnostic extension of examples/real_bench.rs.\n'+s)
++s=(root/'scripts/real_bench.R').read_text()
++s=s.replace('datExpr <- t(expr)', '''stopifnot(!anyDuplicated(rownames(expr)), !anyDuplicated(colnames(expr)),all(is.finite(as.matrix(expr))))
++datExpr <- t(expr)''')
++s=s.replace('t <- proc.time()\nnet <- blockwiseModules', '''write_mat <- function(m,file) write.table(data.frame(ID=rownames(m),m,check.names=FALSE),file,sep="\\t",row.names=FALSE,quote=FALSE)
++probe<-seq(1,ncol(datExpr),by=max(1,ncol(datExpr)%/%64));dimnames(tom)<-list(genes,genes)
++write_mat(cor_mat[probe,,drop=FALSE],file.path(outdir,"cor_probe.tsv"));write_mat(tom[probe,,drop=FALSE],file.path(outdir,"tom_probe.tsv"))
++tree<-hclust(as.dist(1-tom),method="average")
++write.table(data.frame(ID=seq_along(tree$height),left=tree$merge[,1],right=tree$merge[,2],height=tree$height),file.path(outdir,"tree.tsv"),sep="\\t",quote=FALSE,row.names=FALSE)
++dynamic<-cutreeDynamic(tree,distM=1-tom,deepSplit=2,minClusterSize=30,cutHeight=.995,pamRespectsDendro=TRUE,verbose=0)
++write_mat(matrix(dynamic,ncol=1,dimnames=list(genes,"label")),file.path(outdir,"dynamic.tsv"))
++sft<-pickSoftThreshold(datExpr,networkType="unsigned",powerVector=c(1:10,seq(12,20,2)),verbose=0)$fitIndices
++write.table(sft,file.path(outdir,"sft.tsv"),sep="\\t",quote=FALSE,row.names=FALSE)
++t <- proc.time()
++net <- blockwiseModules''')
++s=s.replace('trait_df <- read.table(traitpath, header = TRUE, row.names = 1, check.names = FALSE)', '''trait_df <- read.table(traitpath, header = TRUE, row.names = 1, check.names = FALSE)
++stopifnot(!anyDuplicated(rownames(trait_df)),setequal(rownames(datExpr),rownames(trait_df)))''')
++s=s.replace('# outputs (match Rust format)', '''# Export actual blockwiseModules premerge and final states. unmergedColors is
++# after cleanup/reassignment, NOT the raw dynamic tree cut.
++write.table(data.frame(ID=genes,color=net$unmergedColors),file.path(outdir,"premerge.tsv"),sep="\\t",quote=FALSE,row.names=FALSE)
++colnames(MEs)<-substring(colnames(MEs),3)
++write_mat(MEs,file.path(outdir,"eigengenes.tsv"))
++km<-as.matrix(signedKME(datExpr,MEs));colnames(km)<-colnames(MEs)
++write_mat(km,file.path(outdir,"kme.tsv"))
++adj<-abs(cor_mat)^6;diag(adj)<-0
++within<-vapply(seq_along(genes),function(i)sum(adj[i,net$colors==net$colors[i]]),numeric(1))
++write_mat(matrix(within,ncol=1,dimnames=list(genes,"within")),file.path(outdir,"intramodular.tsv"));rm(adj)
++# outputs (match Rust format)''')
++s=s.replace('net <- blockwiseModules(', 'source("validation/audit/instrument_reference.R"); reference_diagnostic <- instrument_blockwise()\nnet <- reference_diagnostic(')
++(root/'scripts/audit_real_reference.R').write_text('# TEST-ONLY diagnostic extension of scripts/real_bench.R.\n'+s)
+diff --git a/validation/audit/run_audit.py b/validation/audit/run_audit.py
+new file mode 100644
+index 0000000..1ccde4b
+--- /dev/null
++++ b/validation/audit/run_audit.py
+@@ -0,0 +1,22 @@
++import subprocess,json,time,pathlib,os,platform,hashlib
++ROOT=pathlib.Path(__file__).resolve().parents[2]; A=ROOT/'validation/audit'; events=[]
++def run(name,cmd,cwd=ROOT,env=None):
++ t=time.time(); p=subprocess.run(cmd,cwd=cwd,shell=True,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,env=env)
++ (A/'artifacts'/f'{name}.log').write_text(p.stdout)
++ e=dict(name=name,command=cmd,cwd=str(cwd),exit_code=p.returncode,seconds=time.time()-t,log=f'artifacts/{name}.log');events.append(e)
++ with (A/'test_execution_log.txt').open('a') as f:f.write(json.dumps(e)+'\n'+p.stdout+'\n')
++ (A/'artifacts'/f'{name}.execution.json').write_text(json.dumps(e,indent=2));print(name,p.returncode,round(e['seconds'],2),flush=True)
++ return p
++if __name__=='__main__':
++ run('environment',"rustc -Vv; cargo -V; Rscript -e 'sessionInfo(); print(extSoftVersion()); print(parallel::detectCores()); print(packageVersion(\"WGCNA\"))'; uname -a; sysctl -n machdep.cpu.brand_string hw.memsize hw.logicalcpu; git rev-parse HEAD; git ls-remote origin HEAD refs/heads/master")
++ (A/'environment.json').write_text(json.dumps(dict(source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),platform=platform.platform(),thread_environment={k:os.environ.get(k) for k in ['RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','VECLIB_MAXIMUM_THREADS']},details='artifacts/environment.log'),indent=2))
++ run('cargo_baseline','cargo test --workspace')
++ b=A/'artifacts/baseline'; b.mkdir(exist_ok=True)
++ for n in ['Cargo.toml','Cargo.lock','src','target']:
++  (b/n).symlink_to(ROOT/n,target_is_directory=(ROOT/n).is_dir()) if not (b/n).exists() else None
++ import shutil
++ shutil.copytree(ROOT/'scripts',b/'scripts',dirs_exist_ok=True)
++ run('parity_baseline',f'bash {b}/scripts/run_parity.sh 6 1e-9')
++ run('build_real','cargo build --release --example real_bench')
++ import sys
++ sys.exit(1 if any(e['exit_code'] != 0 for e in events) else 0)
+diff --git a/validation/audit/run_diagnostics.py b/validation/audit/run_diagnostics.py
+new file mode 100644
+index 0000000..7d46ee5
+--- /dev/null
++++ b/validation/audit/run_diagnostics.py
+@@ -0,0 +1,12 @@
++from run_audit import *
++# Diagnostic runs add probes/intermediate exports: NOT performance measurements.
++for n in [8000,12000]:
++ for impl in ['rust','r']:
++  dest=A/'artifacts'/f'diagnostic_{n}_{impl}'
++  if dest.exists(): raise RuntimeError(f'refusing overwrite: {dest}')
++  exe='target/release/examples/audit_real' if impl=='rust' else 'R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH='+str(A/'artifacts/accelerate_blas')+' VECLIB_MAXIMUM_THREADS=1 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/audit_real_reference.R --args'
++  p=run(f'diagnostic_{n}_{impl}',f'{exe} Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt {dest} {n}')
++
++# A driver must not turn recorded required command failures into success.
++import sys
++sys.exit(1 if any(e["exit_code"] != 0 for e in events) else 0)
+diff --git a/validation/audit/run_final_checks.py b/validation/audit/run_final_checks.py
+new file mode 100644
+index 0000000..f85f5a3
+--- /dev/null
++++ b/validation/audit/run_final_checks.py
+@@ -0,0 +1,16 @@
++from run_audit import *
++run('cargo_final','cargo test --workspace')
++run('controls_final','Rscript validation/audit/negative_controls.R .')
++run('parity_hardened','bash scripts/run_parity.sh 6 1e-9 validation/audit/artifacts/hardened')
++# Trait ID reordering is scientifically legal. Existing Rust harness discards
++# sample IDs; R aligns them. Preserve this additional minimal failing evidence.
++base=A/'artifacts/baseline/testdata';d=A/'artifacts/trait_reordered';d.mkdir(exist_ok=True)
++run('reorder_trait',f'''Rscript -e 'x<-read.delim("{base}/trait.tsv",check.names=FALSE);write.table(x[nrow(x):1,],"{d}/trait.tsv",sep="\\t",quote=FALSE,row.names=FALSE)' ''')
++run('trait_reordered_rust',f'target/release/rs-wgcna {base}/expr.tsv 6 {d}/rust {base}/colors.txt {d}/trait.tsv')
++run('trait_reordered_r',f'Rscript scripts/r_reference.R {base}/expr.tsv {d}/r 6 {base}/colors.txt {d}/trait.tsv')
++run('trait_reordered_compare',f'Rscript scripts/compare.R {d}/rust {d}/r 1e-9 {d}/comparison {base}/expr.tsv')
++run('input_alignment',"Rscript -e 'x<-read.delim(\"Demo/WGCNA_fpkm_data.txt\",check.names=FALSE,row.names=1);y<-read.delim(\"Demo/WGCNA_data_trait.txt\",check.names=FALSE,row.names=1);stopifnot(!anyDuplicated(rownames(x)),!anyDuplicated(colnames(x)),!anyDuplicated(rownames(y)),identical(colnames(x),rownames(y)),all(is.finite(as.matrix(x))),all(is.finite(as.matrix(y))));cat(nrow(x),ncol(x),\"gene/sample IDs unique and trait order identical\\n\")'")
++
++# A driver must not turn recorded required command failures into success.
++import sys
++sys.exit(1 if any(e["exit_code"] != 0 for e in events) else 0)
+diff --git a/validation/audit/run_matrix.py b/validation/audit/run_matrix.py
+new file mode 100644
+index 0000000..80176b4
+--- /dev/null
++++ b/validation/audit/run_matrix.py
+@@ -0,0 +1,49 @@
++from run_audit import *
++import itertools,shlex,csv
++import sys
++if '--summarize-existing' in sys.argv:
++ with (A/'parameter_coverage.csv').open() as f: rows=list(csv.DictReader(f))
++ for row in rows:
++  d=A/'artifacts'/f"matrix_{int(row['case']):03}"/'comparison'
++  required=[d/'parity_details.csv',d/'extra_details.csv']
++  good=all(p.exists() for p in required)
++  for p in required:
++   if p.exists():
++    with p.open() as f: good=good and all(z['status']=='PASS' for z in csv.DictReader(f))
++  row['status']='PASS' if good else 'FAIL'
++ with (A/'parameter_coverage.csv').open('w') as f:
++  w=csv.DictWriter(f,fieldnames=rows[0]);w.writeheader();w.writerows(rows)
++ print({s:sum(r['status']==s for r in rows) for s in ['PASS','FAIL']})
++ sys.exit(1 if any(r['status']!='PASS' for r in rows) else 0)
++configs=[]
++for nt,tt,td in itertools.product(['unsigned','signed','signed hybrid'],['unsigned','signed','signed Nowick','unsigned 2','signed 2','signed Nowick 2'],['min','mean']):
++ configs.append((nt,tt,td,6,2,.15,'standard'))
++for p in [1,12,2.5]: configs.append(('unsigned','signed','min',p,2,.15,'standard'))
++for ds,m in itertools.product([0,1,3,4],[0,.25,.5]): configs.append(('unsigned','signed','min',6,ds,m,'challenging'))
++configs.append(('unsigned','none','min',6,2,.15,'standard'))
++# Deterministic perturbation uses the existing synthetic fixture; no biological data changed.
++run('generate_challenging',"Rscript -e 'x<-read.delim(\"validation/audit/artifacts/baseline/testdata/expr.tsv\",check.names=FALSE); set.seed(20261028); x[2:10,-1]<- -as.matrix(x[2:10,-1]); x[140:150,-1]<-as.matrix(x[140:150,-1])*.2+matrix(rnorm(11*40),11); write.table(x,\"validation/audit/artifacts/challenging.tsv\",sep=\"\\t\",quote=FALSE,row.names=FALSE)'")
++rows=[]
++for i,(nt,tt,td,p,ds,m,fixture) in enumerate(configs):
++ dest=A/'artifacts'/f'matrix_{i:03}'
++ if dest.exists(): raise RuntimeError(f'refusing overwrite: {dest}')
++ dest.mkdir()
++ base=A/'artifacts/baseline/testdata';expr=base/'expr.tsv' if fixture=='standard' else A/'artifacts/challenging.tsv'
++ params=' '.join(map(shlex.quote,map(str,[p,base/'colors.txt',base/'trait.tsv',nt,tt,td,ds,m])))
++ # Existing command argument order: expr out power colors trait nt tt td deep merge.
++ rustargs=' '.join(map(shlex.quote,map(str,[expr,p,dest/'rust',base/'colors.txt',base/'trait.tsv',nt,tt,td,ds,m])))
++ rargs=' '.join(map(shlex.quote,map(str,[expr,dest/'r',p,base/'colors.txt',base/'trait.tsv',nt,tt,td,ds,m])))
++ pr=run(f'matrix_{i:03}_rust',f'target/release/examples/audit_matrix {rustargs}')
++ rr=run(f'matrix_{i:03}_r',f'Rscript scripts/r_reference.R {rargs}')
++ status='FAIL'
++ if pr.returncode==0 and rr.returncode==0:
++  pc=run(f'matrix_{i:03}_compare',f'Rscript scripts/compare.R {dest}/rust {dest}/r 1e-9 {dest}/comparison {expr}')
++  pe=run(f'matrix_{i:03}_extra',f'Rscript validation/audit/compare_extra.R {dest}')
++  status='PASS' if pc.returncode==0 and pe.returncode==0 else 'FAIL'
++ rows.append(dict(case=i,network=nt,TOM=tt,denominator=td,power=p,deepSplit=ds,mergeCutHeight=m,fixture=fixture,status=status))
++ with (A/'parameter_coverage.csv').open('w') as f:
++  w=csv.DictWriter(f,fieldnames=rows[0]);w.writeheader();w.writerows(rows)
++
++# A driver must not turn recorded required command failures into success.
++import sys
++sys.exit(1 if any(e["exit_code"] != 0 for e in events) else 0)
+diff --git a/validation/audit/run_perf_b.py b/validation/audit/run_perf_b.py
+new file mode 100644
+index 0000000..6a9d7ec
+--- /dev/null
++++ b/validation/audit/run_perf_b.py
+@@ -0,0 +1,21 @@
++from run_audit import *
++# Wait for original default-environment measurements and diagnostics to finish.
++# This permits independent comparison of quiet, controlled Scenario B.
++import sys
++for pid in map(int,sys.argv[1:]):
++ while True:
++  try: os.kill(pid,0)
++  except ProcessLookupError: break
++  time.sleep(3)
++for n in [8000,12000]:
++ for rep in [1,2,3]:
++  for impl in ['rust','r']:
++   dest=A/'artifacts'/f'perfB_{n}_{impl}_{rep}'
++   if dest.exists():raise RuntimeError('refusing overwrite '+str(dest))
++   if impl=='rust': exe='AUDIT_THREADS=8 RAYON_NUM_THREADS=8 target/release/examples/audit_perf'
++   else:exe='R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH='+str(A/'artifacts/accelerate_blas')+' VECLIB_MAXIMUM_THREADS=8 ALLOW_WGCNA_THREADS=8 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args'
++   run(f'perfB_{n}_{impl}_{rep}',f'{exe} Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt {dest} {n}')
++
++# A driver must not turn recorded required command failures into success.
++import sys
++sys.exit(1 if any(e["exit_code"] != 0 for e in events) else 0)
+diff --git a/validation/audit/run_real.py b/validation/audit/run_real.py
+new file mode 100644
+index 0000000..4f2fd70
+--- /dev/null
++++ b/validation/audit/run_real.py
+@@ -0,0 +1,13 @@
++from run_audit import *
++# Preserve each repeat in a new directory; refuse overwriting generated evidence.
++for n in [8000,12000]:
++ for rep in range(1, (3 if n==8000 else 1)+1):
++  for impl in ['rust','r']:
++   dest=A/'artifacts'/f'real_{n}_{impl}_{rep}'
++   if dest.exists(): raise RuntimeError(f'refusing overwrite: {dest}')
++   exe='target/release/examples/real_bench' if impl=='rust' else 'Rscript scripts/real_bench.R'
++   run(f'real_{n}_{impl}_{rep}',f'/usr/bin/time -l {exe} Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt {dest} {n}')
++
++# A driver must not turn recorded required command failures into success.
++import sys
++sys.exit(1 if any(e["exit_code"] != 0 for e in events) else 0)
+diff --git a/validation/audit/smoke_diagnostics.py b/validation/audit/smoke_diagnostics.py
+new file mode 100644
+index 0000000..dbe6886
+--- /dev/null
++++ b/validation/audit/smoke_diagnostics.py
+@@ -0,0 +1,9 @@
++from run_audit import *
++b=A/'artifacts/diagnostic_smoke'; b.mkdir(exist_ok=True)
++# Use original nonnegative biological fixture, top 150, unchanged parameters.
++for impl,exe in [('rust','target/release/examples/audit_real'),('r','Rscript scripts/audit_real_reference.R')]:
++ run(f'diagnostic_smoke_{impl}',f'{exe} Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt {b}/{impl} 150')
++
++# A driver must not turn recorded required command failures into success.
++import sys
++sys.exit(1 if any(e["exit_code"] != 0 for e in events) else 0)
+diff --git a/validation/audit/write_report.py b/validation/audit/write_report.py
+new file mode 100644
+index 0000000..0ec43ab
+--- /dev/null
++++ b/validation/audit/write_report.py
+@@ -0,0 +1,172 @@
++from run_audit import ROOT,A
++from aggregate_results import read
++import pathlib,subprocess,json,csv
++
++def table(rows,cols):
++ if not rows:return '（暂无已完成结果；不得视为 PASS。）\n'
++ def fmt(v):
++  if isinstance(v,float):return f'{v:.10g}'
++  return str(v).replace('|','/').replace('\n',' ')
++ return '| '+' | '.join(cols)+' |\n| '+' | '.join(['---']*len(cols))+' |\n'+''.join('| '+' | '.join(fmt(r.get(k,'')) for k in cols)+' |\n' for r in rows)
++counts=read(A/'test_counts.csv');coverage=read(A/'parameter_coverage.csv');summary=read(A/'parity_summary.csv');details=read(A/'parity_details.csv');bench=read(A/'benchmark_summary.csv')
++real=[r for r in summary if r['kind']=='module' and any(k in r['case'] for k in ['real_','perfB_','diagnostic_'])]
++core=[]
++for metric in ['cor.tsv','adjacency.tsv','tom.tsv','sft.tsv','eigengenes.tsv','kme.tsv','module_trait_cor.tsv','module_trait_p.tsv']:
++ vals=[float(r['max_abs']) for r in details if r['metric']==metric and ('matrix_' in r['case'] or 'hardened_final' in r['case']) and r['max_abs'] not in ('NA','')]
++ core.append(dict(metric=metric,max_abs=max(vals),failed_comparisons=sum(r['status']=='FAIL' for r in details if r['metric']==metric and ('matrix_' in r['case'] or 'hardened_final' in r['case']))))
++large=[r for r in details if 'diagnostic_' in r['case']]
++stats=read(A/'artifacts/stats_grid/parity_details.csv')
++stages=read(A/'stage_summary.csv')
++final_log=A/'artifacts/cargo_verified_final.log'; final_regressions=4 if '4 failed' in final_log.read_text() else '见实际日志'
++q='PASS' if (A/'artifacts/quarto_render_successful.execution.json').exists() and json.loads((A/'artifacts/quarto_render_successful.execution.json').read_text())['exit_code']==0 else 'NOT EXECUTED'
++text=f'''# rs-WGCNA 科学一致性审计
++
++审计日期：2026-10-28（Asia/Shanghai）。最终科学判定：**FAIL**。审计过程保留全部失败，不改变科学容差或 Rust 生产算法。
++
++## 1. 执行摘要
++
++本地 `rs_WGCNA` 在任务开始时与 GitHub `master`/远端 HEAD 完全一致，提交为 `4f5055425ec9999dfe7b15422d24b5bb72cb1f7e`，初始工作区干净。依据：[environment.log](artifacts/environment.log)。这次新增的是验证脚本、测试和报告，未提交或推送。结束时的远端复查遇到 HTTP2 网络错误，HTTP1.1 重试在 20 秒超时，标为 SKIPPED；一致性结论有任务开始时的成功远端证据，不冒充结束时重新验证通过。见 [remote_final.json](remote_final.json)。
++
++原始 12 个 Rust 单元测试及原始合成数据 9 项比较通过；但原比较器存在会掩盖缺文件、非有限值、ID 错位的漏洞。强化后，52 组参数配置为 **{sum(r['status']=='PASS' for r in coverage)} PASS / {sum(r['status']=='FAIL' for r in coverage)} FAIL**。默认整数幂、常用 unsigned/signed TOM 的小型矩阵通常达到很高精度，但不能据此推断所有参数及统计函数等价。
++
++主要发现：小数幂被截断；`signed Nowick 2` 的 TOM 映射不一致；Student P 值在弱相关区有严重数值误差；带 ID 的性状表重排会导致 Rust 入口按错误样本配对；12K 的单基因差异与清理后重新计算 eigengene 的重分配路径有关。8K 最终模块为 100% 一致，12K 为 11999/12000（99.9916667%），ARI 约 0.999808868。现有证据不支持 README 的“仅为固有浮点边界、不是逻辑问题”断言。
++
++核心证据：[parity_details.csv](parity_details.csv)、[parity_summary.csv](parity_summary.csv)、[test_counts.csv](test_counts.csv)、[test_manifest.json](test_manifest.json)。原始基准文件未覆盖。
++
++## 2. 精确源代码与运行环境
++
++- GitHub：`https://github.com/XiaoWang-SXAU-Lab/rs-wgcna`；工作目录：`{ROOT}`。
++- Rust/Cargo 1.99.1，release 编译使用原 Cargo 配置和锁文件；测试使用 cargo test 的默认 test profile。
++- R 4.5.1；WGCNA 1.74；dynamicTreeCut 1.63.1；fastcluster 1.3.0。WGCNA 安装包提示 built under R 4.5.2，这一版本差异已保留在日志。
++- Apple M2，8 逻辑核，16 GiB RAM，macOS Tahoe 26.5，aarch64。
++- Scenario A：R 默认 libRblas（reference BLAS），WGCNA 1 线程；Rust 按可用并行度配置 faer，8 线程，原入口没有显式约束全局 Rayon 池。
++- Scenario B：进程级加载已安装 Accelerate BLAS，WGCNA 与 BLAS 各配置 8 线程；测试专用 Rust 基准把 faer 和 Rayon 均配置为 8。这里是各线程池配置，不是对总 OS 线程数的断言。
++- 真实数据诊断 R 使用 Accelerate，BLAS 上限 1、WGCNA 1。它与默认 reference BLAS 重跑的最终模块结果分开报告。
++
++完整信息：[environment.json](environment.json)、[R_environment_default.json](artifacts/R_environment_default.json)、[R_environment_accelerate8.json](artifacts/R_environment_accelerate8.json)。[file_hashes.json](file_hashes.json) 保存生产源码、输入与历史文件的 SHA-256。未下载替代生物数据。
++
++## 3. 原测试基线与实际执行
++
++修改验证脚本之前已运行 `cargo test --workspace`：12 PASS、0 FAIL、0 ignored。原脚本 `run_parity.sh 6 1e-9` 在隔离输出目录中运行，9 项比较 PASS，最大误差 1.59394719645434e-12（模块–性状 P 值）。原脚本副本和输出保存在 [artifacts/baseline](artifacts/baseline)。初始基础设施审计写于更改脚本之前：[INITIAL_AUDIT.md](INITIAL_AUDIT.md)。
++
++强化后重新运行相同核心流程：[parity_hardened_final.log](artifacts/parity_hardened_final.log)，退出码 0。最终 `cargo test --workspace` 中原有 12 项仍通过，新增 {final_regressions} 项未忽略的回归测试按预期暴露缺陷，命令非零退出；这是真实 FAIL，不记为 PASS。
++
++{table(counts,['group','PASS','FAIL','SKIPPED','NOT SUPPORTED','NOT EXECUTED'])}
++
++计数按表中层级分别统计：参数配置、比较项、网格元素、控制测试不能相加当成独立实验总数；历史输出不计入当前验证通过数。负控制的 PASS 表示错误被检测到并返回预期非零退出码。
++
++精确命令、目录、时长、退出码：[test_manifest.json](test_manifest.json)；完整输出：[test_execution_log.txt](test_execution_log.txt)。过程中发现并修正的测试辅助程序解析/编译错误保留在相应日志，最终证据使用 verified/final 运行；不把失败尝试抹去。
++
++## 4. 原比较器漏洞
++
++`scripts/compare.R` 原来把必需文件缺失当成 SKIP，缺失颜色文件甚至无提示；只检查矩阵尺寸，不检查行列 ID；按位置相减；max/sum 使用 na.rm=TRUE；仅报 max absolute error；不报 ARI、分区列联表或重排策略。混合有限值/NA 时可隐藏错误。原模块标签向量没有基因 ID。原 Quarto 的动态切树 100% 与部分性能/科学结论是手工写入。
++
++真实数据基准另有两个关键约束：Rust 只输出非 grey 模块，R 包括 grey；Rust 原基准的连续结果只输出六位小数，无法验证 1e-9 精度。两点均显式记录，未将不相同的文件直接按位置比较。
++
++## 5. 验证改动与失败语义
++
++强化比较器要求全部八个连续文件和颜色文件存在；验证唯一非空 ID、尺寸与标识集合，并按 ID 显式对齐。表达矩阵提供额外的基因/样本集合约束。无 ID 的颜色向量使用各自已标注的 correlation 行顺序，并核对原表达矩阵顺序。
++
++所有非有限值（NA、NaN、Inf、-Inf）均失败；当前确定性 fixture 没有合理的预期缺失，因此没有放宽掩码策略。每个连续比较保存总数、max/mean absolute error、RMSE、最大相对误差、超容差数量/比例。绝对容差保持 1e-9；相对分母为 max(abs(R),1e-12)，近零相对误差不单独决定 FAIL。SFT 仅规范化已知列名别名，没有对未知列名宽松匹配。
++
++颜色精确一致率与 ARI 分开；输出基因不一致列表和列联表。必需失败返回非零，缺证据不会变为 PASS。`run_parity.sh` 现在默认新建输出目录，保留旧 r_out/rust_out/testdata。测试扩展继续调用现有 Rust/R 核心，没有重新实现网络算法。
++
++15 项控制均符合预期，包括缺文件、错误数值、全部四种非有限值、重复/错误 ID、错误样本 ID、标签错位、缺颜色，以及正确重排、手算误差与颜色任意重命名的正控制。[控制结果](artifacts/negative_controls/summary.csv)。
++
++## 6. 参数覆盖
++
++{table(coverage,['case','network','TOM','denominator','power','deepSplit','mergeCutHeight','fixture','status'])}
++
++网络类型为 unsigned / signed / signed hybrid；六个非 none TOM 类型 × 两种分母均测试，另含 none。幂为 1、6、12 及实际被接口接受的小数 2.5。deepSplit 0/1/2/3/4，mergeCutHeight 0/.15/.25/.5；不是所有参数的笛卡尔积。原 seed-42 的 150×40 fixture、确定性弱信号/反相关扰动 fixture 用于参数覆盖；大模块由原 8K/12K 数据覆盖。
++
++所有表内组合均被两边接受，失败不能标为 NOT SUPPORTED。相关类型仅测 Pearson；不宣称 bicor、分块、多缺失值、外部 branch split、cosine 等未覆盖能力已验证。`signed Nowick 2` 六组 FAIL；fractional power 一组 FAIL。部分失败的颜色名称不一致但 ARI=1，这是分区重命名而非生物分区改变。
++
++## 7. 连续量误差与独立统计网格
++
++以下为小型参数测试与强化核心流程的最大误差，**包括已知失败参数**，不能解读为通过配置的精度：
++
++{table(core,['metric','max_abs','failed_comparisons'])}
++
++独立统计网格：9 个样本量（3 到 1000），14 个相关幅度，正负两种符号，共 252 项（零值正负重复保留，不把它们称为独立随机样本）。
++
++{table(stats,['metric','status','total','max_abs','mean_abs','rmse','above_tolerance'])}
++
++Student grid 中 124/252 超过 1e-9；r=1e-8、n=5 时 R≈0.9999999873，Rust≈4.217e-6。Fisher 的绝对误差通过。源代码中的 incomplete-beta 继续分式缺少近 1 区域的互补变换/明确不收敛处理，是可疑数值路径；本审计只证明失败，不擅自修复。[PVALUE_MRE.md](PVALUE_MRE.md)。
++
++小数幂最大 adjacency 误差约 0.07048239、TOM 0.08142745：[FRACTIONAL_POWER_MRE.md](FRACTIONAL_POWER_MRE.md)。Nowick2 TOM 最大误差约 0.23192776，2 基因例子产生 +0.5 / -0.5：[NOWICK2_MRE.md](NOWICK2_MRE.md)。性状重排使模块–性状相关最大误差约 0.69805869：[TRAIT_ALIGNMENT_MRE.md](TRAIT_ALIGNMENT_MRE.md)。
++
++## 8. 精确标签与置换不变分区
++
++{table(real,['case','total','exact_agreement','disagreeing','ARI','gene_order_identical','status'])}
++
++所有真实数据比较先验证唯一基因 ID 和一致基因集，并按 ID 对齐。MAD 保留顺序也核对一致。输入包含 36953 基因、56 样本；原性状顺序与表达矩阵样本顺序完全一致：[input_alignment.log](artifacts/input_alignment.log)。因此该固定输入不受性状重排缺陷影响。基因/样本 ID 不匹配不能依靠矩阵数值看起来接近而通过。
++
++## 9. 8K / 12K 端到端验证
++
++原 Demo 数据、log10(x+1)、MAD top-N、power=6、unsigned network、signed TOM、min denominator、minModuleSize=30、merge=.25、deepSplit=2、detectCutHeight=.995，未为提高通过率调整。
++
++默认环境 8K 完整运行 3 次，12K 完整运行 1 次；受控优化环境重复次数见 benchmark_summary。12K reference-BLAS 单轮实际约 834 秒，因此另外两轮默认 12K 标 SKIPPED，改用优化环境重复及诊断运行保留覆盖。[repetition_policy.json](repetition_policy.json)。初始运行驱动在第一轮结束后通过预留的输出保护目录停止，guard 的非零终止是执行控制，不是额外一次生物学 FAIL；未把预留目录当成结果。
++
++诊断额外比较 SFT、cor/TOM 探针、全部树 merge/height、动态切树、清理、最终 eigengene/kME、模块–性状 r/p、模块内 connectivity。8K cor/TOM 各 512000 元素，12K 各 780000 元素；这是均匀选取约 64 行对全部基因的探针，**不是完整平方矩阵逐元素验证**。大矩阵 adjacency 没有导出，NOT EXECUTED；小型参数矩阵的 adjacency 完整比较。
++
++{table(large,['case','metric','status','max_abs','above_tolerance','total'])}
++
++8K 模块一致，但高精度 P 值仍有约 4.10e-8 误差；12K 模块不同会引发 eigengene/kME/connectivity 的后续差异，不能全部解释为线性代数舍入。原 benchmark 的六位小数输出达到不了 1e-9，严格比较仍如实 FAIL；没有通过提高容差把它们变绿。
++
++## 10. 12K 差异基因与最早分歧
++
++唯一重现的基因是 **ENSG00000149541**：R=turquoise，Rust=yellow。历史输出也有同一基因。原始动态标签与清理标签均为 1；R premerge 为 turquoise。
++
++{table(stages,['genes','stage','total','exact_agreement','ARI','disagreeing','status'])}
++
++R 使用原动态模块的 eigengene 执行 Fisher 比值重分配；Rust 的私有重分配函数重新计算清理后 eigengene。实际公共 API 复测与 R 独立重算一致：原动态模块 ratio≈1.0180061545e-6（保留），清理后 ratio≈9.1835531036e-7（重分配），生产阈值均为 1e-6。最佳 kME 从约 .72014109 变成 .72114484，差异约 .001，远大于浮点误差。两边同一 eigengene 基础上的 kME 仅有机器精度量级差别。
++
++因此证据指向**清理与重分配之间的 eigengene 基础不同**，最早已证实的决策分歧为重分配；没有证据支持树 ties、标签任意重命名或 eigengene 方向是此基因分歧的主要原因。Rust 私有函数未直接导出 premerge 状态，故保留这一跟踪限制，建议后续增加专门可观测接口。
++
++详情：[REASSIGNMENT_FINDING.md](REASSIGNMENT_FINDING.md)、[逐基因 kME](artifacts/diagnostic_12000_comparison/mismatch_investigation.tsv)、[R 阈值重算](artifacts/diagnostic_12000_comparison/reassignment_thresholds.tsv)、[Rust 实测](artifacts/diagnostic_12000_comparison/reassignment_rust_measurements_verified.tsv)。最终 own kME 距离 minKMEtoStay 的值已导出，但这个清理阈值不是引发当前分歧的 Fisher ratio 阈值，二者没有混用。
++
++## 11. 性能方法与结果
++
++计时边界沿用原 real_bench：读取与 log10、MAD 选基因、cor、TOM、完整模块检测、模块–性状。完整模块检测内部重算 cor/TOM；端到端和仅求 log10 + MAD + module_detection_total + module_trait，不重复计入单独 cor/TOM。它并非程序全部壁钟（输出写盘未计入）。两种实现的相同性状模块集不完全一致（grey），读取实现与线程池也不同，不能声称算法单独加速。
++
++{table([r for r in bench if r['step'] in ['nonoverlap_total','tom','module_detection_total']],['scenario','genes','implementation','step','repeats','median_seconds','min_seconds','max_seconds','sd_seconds','threads','BLAS'])}
++
++默认环境的部分重复与编译、参数测试或诊断并发，存在负载污染，均为描述性数据，不能用于可靠速度倍数。受控 B 的基准驱动等待默认测试与大规模诊断结束，逐轮串行；桌面其他活动不受控制，不是专用性能实验。优化 BLAS 已通过真实加载路径验证，未修改系统链接。
++
++默认 `/usr/bin/time -l` 日志含进程壁钟及最大 RSS/peak footprint；不能将单进程 RSS 简单等同于所有子进程/整个系统内存。B 的 [perfB_sampled_memory.json](artifacts/perfB_sampled_memory.json) 为 1 秒间隔 RSS 采样下界，启动晚于首个 Rust repeat，不冒充精确峰值。原始历史 timings 保存在 bench_out，源提交/线程环境未知，仅作历史对照。
++
++完整逐轮计时：[benchmark_details.csv](benchmark_details.csv)，中位数、范围和标准差：[benchmark_summary.csv](benchmark_summary.csv)。不从单次 12K 默认测量推断方差，不丢弃慢轮改善速度比。
++
++## 12. FAIL / SKIPPED / NOT SUPPORTED / NOT EXECUTED
++
++- FAIL：7 参数配置；Student grid；性状重排 MRE；12K 最终模块；真实连续量的明确误差或原输出精度不足；新增 4 个回归测试。具体每项和退出码见 CSV/manifest。
++- SKIPPED：另外两次昂贵的默认 reference-BLAS 12K 重复，原因明确记录。
++- NOT SUPPORTED：当前枚举测试中没有此类组合。没有把已接受但算错的参数改标 unsupported。
++- NOT EXECUTED：大数据完整 adjacency/cor/TOM 平方矩阵逐元素比较；生产 Rust 私有函数的直接 premerge/reassignment 状态导出；原基准未导出的连续/中间量（在其原始运行上）。探针和单独诊断不能抹掉这些缺证据项。
++
++## 13. 已知限制
++
++这是有限的确定性配置与两个来自同一 Demo 源矩阵的基因子集验证，不代表所有生物数据、噪声/缺失模式或参数。8K 和 12K 不是独立来源数据。未测的可选功能不能当成通过。eigengene 方向未通过任意翻转“修正”：沿用各自默认平均表达方向并报告原始符号；ARI 不依赖颜色名。实际数据阶段诊断使用优化 BLAS，默认 BLAS 仅最终结果复核，因此中间阶段环境差异透明保留。
++
++历史 README 中精度值准确重现于原合成 fixture，却不足以支持通用“机器精度”等价。旧 HTML 保留为历史证据，不能当作当前自动生成的报告。Quarto 新报告状态目前为 {q}，详见后述最终检查。
++
++## 14. 最终科学判断与生产文件验证
++
++**整体 FAIL；有限配置的核心相关/邻接/TOM 通过，不等于全实现科学等价。** Student P 值问题具有实际显著性判断风险；Nowick2、小数幂与重分配差异均有可执行证据。无需也没有通过调整容差、改数据或算法来隐藏失败。
++
++`git diff --exit-code -- src Cargo.toml Cargo.lock Demo bench_out report/benchmark.html` 返回 0：[unchanged_production.log](artifacts/unchanged_production.log)。完整变更：[final_git_diff.patch](final_git_diff.patch)；状态：[final_git_status.txt](final_git_status.txt)。新增例子是测试专用 harness，回归测试未忽略；源算法未修改，未 commit/push。
++
++`scripts/compare.R`、`scripts/r_reference.R`、`scripts/run_parity.sh` 和 `report/benchmark.qmd` 是原有文件改动；新增 tests/audit_numeric_contract.rs、examples/audit*.rs、scripts/audit_real_reference.R 和 validation/audit 下的运行/统计/证据文件。Quarto 读取真实 CSV，不再手写动态切树或整体等价结论；生成到 report/benchmark-audit.html，旧 report/benchmark.html 未覆盖。渲染状态：{q}。
++
++## 15. 建议后续动作
++
++1. 单独修复并严格回归测试 Student P 值，覆盖近零相关、端点和多样本量；对不收敛显式报告。
++2. 明确 fractional power 支持契约，支持实数幂或明确拒绝；核对 Nowick2 的 WGCNA C 端映射与各种网络类型。
++3. 使重分配时的 eigengene 生成阶段与参考实现一致，并加入 ENSG00000149541 回归 fixture；不要修改阈值使该基因“通过”。
++4. Rust 输入入口按样本 ID 对齐性状，或明确拒绝顺序不符；禁止静默丢弃身份信息。
++5. 完善公开阶段诊断、完整大矩阵流式比较及独立真实数据集验证，再更新 README 的科学/性能结论。当前审计未改 README，避免在验证任务中混入生产宣传改动。
++
++复现说明：[REPRODUCE.md](REPRODUCE.md)。审计数据包目录即 `validation/audit/`；所有关键结论可沿相对链接追溯到机器可读数据或原始可执行命令。
++'''
++(A/'SCIENTIFIC_PARITY_AUDIT.md').write_text(text)
++print('report generated',len(text),'characters')
+diff --git a/validation/audit/capture_environment.R b/validation/audit/capture_environment.R
+new file mode 100644
+index 0000000..50bf64f
+--- /dev/null
++++ b/validation/audit/capture_environment.R
+@@ -0,0 +1,3 @@
++suppressMessages(library(WGCNA));suppressMessages(library(jsonlite))
++x<-list(R=R.version.string,WGCNA=as.character(packageVersion('WGCNA')),dynamicTreeCut=as.character(packageVersion('dynamicTreeCut')),fastcluster=as.character(packageVersion('fastcluster')),BLAS=unname(extSoftVersion()['BLAS']),LAPACK=La_library(),R_platform=R.version$platform,logical_cores=parallel::detectCores(),WGCNA_threads=WGCNAnThreads(),environment=as.list(Sys.getenv(c('ALLOW_WGCNA_THREADS','RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','VECLIB_MAXIMUM_THREADS'))))
++write_json(x,commandArgs(TRUE)[1],auto_unbox=TRUE,pretty=TRUE)
+diff --git a/validation/audit/check_stages.R b/validation/audit/check_stages.R
+new file mode 100644
+index 0000000..7f1d8f0
+--- /dev/null
++++ b/validation/audit/check_stages.R
+@@ -0,0 +1,10 @@
++source('scripts/compare.R');rows<-list()
++for(n in c(8000,12000)) {
++ b<-'validation/audit/artifacts';u<-file.path(b,paste0('diagnostic_',n,'_rust'));r<-file.path(b,paste0('diagnostic_',n,'_r'))
++ for(stage in c('dynamic','cleanup')){
++  x<-read_checked(file.path(u,paste0(stage,'.tsv')));y<-read_checked(file.path(r,paste0(stage,'.tsv')));x<-align_checked(x,y);z<-partition_metrics(x[,1],y[,1])
++  rows[[paste(n,stage)]]<-data.frame(genes=n,stage,total=z$total,exact_agreement=z$exact_agreement,ARI=z$ARI,disagreeing=z$disagreeing,status=if(z$disagreeing==0)'PASS' else 'FAIL')
++ }
++ x<-read_checked(file.path(r,'dynamic_actual.tsv'));y<-read_checked(file.path(r,'dynamic.tsv'));x<-align_checked(x,y);z<-partition_metrics(x[,1],y[,1]);rows[[paste(n,'actual_cut')]]<-data.frame(genes=n,stage='actual_R_cut_vs_reconstructed',total=z$total,exact_agreement=z$exact_agreement,ARI=z$ARI,disagreeing=z$disagreeing,status=if(z$disagreeing==0)'PASS' else 'FAIL')
++}
++z<-do.call(rbind,rows);write.csv(z,'validation/audit/stage_summary.csv',row.names=FALSE);print(z);if(any(z$status!='PASS'))quit(status=1)
+diff --git a/validation/audit/compare_extra.R b/validation/audit/compare_extra.R
+new file mode 100644
+index 0000000..509d009
+--- /dev/null
++++ b/validation/audit/compare_extra.R
+@@ -0,0 +1,7 @@
++source('scripts/compare.R');d<-commandArgs(TRUE)[1];rows<-list()
++for(f in c('tree.tsv','dynamic.tsv','connectivity.tsv')) {
++ x<-read_checked(file.path(d,'rust',f));y<-read_checked(file.path(d,'r',f));z<-error_metrics(x,y,1e-9)
++ rows[[f]]<-cbind(metric=f,status=if(z$above_tolerance==0)'PASS' else 'FAIL',z)
++ if(f=='dynamic.tsv') {p<-partition_metrics(as.vector(x),as.vector(y));write.csv(data.frame(exact_agreement=p$exact_agreement,ARI=p$ARI,disagreeing=p$disagreeing),file.path(d,'comparison/dynamic_summary.csv'),row.names=FALSE)}
++}
++r<-do.call(rbind,rows);write.csv(r,file.path(d,'comparison/extra_details.csv'),row.names=FALSE);print(r);if(any(r$status!='PASS'))quit(status=1)
+diff --git a/validation/audit/compare_real.R b/validation/audit/compare_real.R
+new file mode 100644
+index 0000000..71f2445
+--- /dev/null
++++ b/validation/audit/compare_real.R
+@@ -0,0 +1,47 @@
++source('scripts/compare.R')
++args<-commandArgs(TRUE);xdir<-args[1];ydir<-args[2];out<-args[3];dir.create(out,recursive=TRUE,showWarnings=FALSE)
++read_labels<-function(d){x<-read.delim(file.path(d,'module_colors.txt'),header=FALSE,stringsAsFactors=FALSE);names(x)<-c('gene','color');if(anyDuplicated(x$gene)||anyNA(x)||any(!nzchar(x$gene)))stop('invalid labels');x}
++x<-read_labels(xdir);y<-read_labels(ydir);stopifnot(setequal(x$gene,y$gene));order_equal<-identical(x$gene,y$gene);x<-x[match(y$gene,x$gene),]
++genes<-readLines(file.path(xdir,'filtered_genes.txt'));refgenes<-readLines(file.path(ydir,'filtered_genes.txt'))
++stopifnot(!anyDuplicated(genes),!anyDuplicated(refgenes),identical(genes,x$gene),identical(refgenes,y$gene))
++p<-partition_metrics(x$color,y$color)
++write.csv(data.frame(total=p$total,exact_agreement=p$exact_agreement,disagreeing=p$disagreeing,ARI=p$ARI,gene_order_identical=order_equal,status=if(p$disagreeing==0)'PASS' else 'FAIL'),file.path(out,'module_summary.csv'),row.names=FALSE)
++write.table(as.data.frame(p$contingency),file.path(out,'module_contingency.tsv'),sep='\t',quote=FALSE,row.names=FALSE)
++dis<-data.frame(gene=y$gene[x$color!=y$color],rust=x$color[x$color!=y$color],R=y$color[x$color!=y$color])
++write.table(dis,file.path(out,'module_disagreements.tsv'),sep='\t',quote=FALSE,row.names=FALSE)
++rows<-list()
++# Six-decimal historical/default benchmark files cannot validate machine precision.
++# Strict 1e-9 remains the required threshold. Quantization-aware 5e-7 is an
++# additional reporting bound only, never substituted into PASS decisions.
++for(f in c('module_trait_cor.tsv','module_trait_p.tsv','cor_probe.tsv','tom_probe.tsv','sft.tsv','tree.tsv','dynamic.tsv','eigengenes.tsv','kme.tsv','intramodular.tsv')) {
++ if(!file.exists(file.path(xdir,f))||!file.exists(file.path(ydir,f))) {rows[[f]]<-data.frame(metric=f,status=if(grepl('diagnostic',xdir)||f %in% c('module_trait_cor.tsv','module_trait_p.tsv'))'FAIL' else 'NOT EXECUTED',reason='required diagnostic file missing or not exported by original benchmark',total=NA,max_abs=NA,mean_abs=NA,rmse=NA,max_relative=NA,above_tolerance=NA,proportion_above=NA,tolerance=1e-9);next}
++ rows[[f]]<-tryCatch({
++  a<-read_checked(file.path(xdir,f));b<-read_checked(file.path(ydir,f));notes<-''
++  if(f %in% c('module_trait_cor.tsv','module_trait_p.tsv')) {rownames(a)<-sub('^ME','',rownames(a));rownames(b)<-sub('^ME','',rownames(b))}
++  if(f=='sft.tsv'){aliases<-c('SFT.R.sq'='R.sq','mean.k.'='mean.k','median.k.'='median.k','max.k.'='max.k');for(v in names(aliases))colnames(b)[colnames(b)==v]<-aliases[[v]]}
++  if(f %in% c('module_trait_cor.tsv','module_trait_p.tsv','eigengenes.tsv','kme.tsv')) {
++   # R's grey eigengene is expressly excluded by Rust real_bench.rs. Compare
++   # the non-grey scientific estimands and report exclusion, not silent drops.
++   if(f %in% c('eigengenes.tsv','kme.tsv')){b<-b[,colnames(b)!='grey',drop=FALSE]}else b<-b[rownames(b)!='grey',,drop=FALSE]
++   notes<-'R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate'
++  }
++  z<-error_metrics(a,b,1e-9);cbind(metric=f,status=if(z$above_tolerance==0)'PASS' else 'FAIL',reason=notes,z)
++ },error=function(e)data.frame(metric=f,status='FAIL',reason=conditionMessage(e),total=NA,max_abs=NA,mean_abs=NA,rmse=NA,max_relative=NA,above_tolerance=NA,proportion_above=NA,tolerance=1e-9))
++}
++write.csv(do.call(rbind,rows),file.path(out,'parity_details.csv'),row.names=FALSE)
++if(file.exists(file.path(xdir,'dynamic.tsv')) && file.exists(file.path(ydir,'dynamic.tsv'))) {
++ a<-read_checked(file.path(xdir,'dynamic.tsv'));b<-read_checked(file.path(ydir,'dynamic.tsv'));a<-align_checked(a,b)
++ z<-partition_metrics(a[,1],b[,1]);write.csv(data.frame(total=z$total,exact_agreement=z$exact_agreement,disagreeing=z$disagreeing,ARI=z$ARI),file.path(out,'dynamic_summary.csv'),row.names=FALSE)
++}
++# Annotate every discordant gene using genuinely exported stages and kME.
++if(nrow(dis)>0 && file.exists(file.path(xdir,'kme.tsv'))) {
++ fetch<-function(dir,file,id){p<-file.path(dir,file);if(!file.exists(p))return(NA_character_);z<-read.delim(p,check.names=FALSE);as.character(z[match(id,z[[1]]),2])}
++ a<-read_checked(file.path(xdir,'kme.tsv'));b<-read_checked(file.path(ydir,'kme.tsv'))
++ for(i in seq_len(nrow(dis))){g<-dis$gene[i];dis$rust_dynamic[i]<-fetch(xdir,'dynamic.tsv',g);dis$R_dynamic[i]<-fetch(ydir,'dynamic.tsv',g);dis$rust_cleanup[i]<-fetch(xdir,'cleanup.tsv',g);dis$R_cleanup[i]<-fetch(ydir,'cleanup.tsv',g);dis$R_premerge[i]<-fetch(ydir,'premerge.tsv',g)
++  for(m in union(colnames(a),colnames(b))) {dis[i,paste0('rust_kME_',m)]<-if(m %in% colnames(a))a[g,m] else NA;dis[i,paste0('R_kME_',m)]<-if(m %in% colnames(b))b[g,m] else NA}
++  dis$rust_final_own_kME[i]<-a[g,dis$rust[i]];dis$R_final_own_kME[i]<-b[g,dis$R[i]]
++  dis$rust_final_distance_minKMEtoStay[i]<-abs(a[g,dis$rust[i]])-.3;dis$R_final_distance_minKMEtoStay[i]<-abs(b[g,dis$R[i]])-.3
++ }
++ write.table(dis,file.path(out,'mismatch_investigation.tsv'),sep='\t',quote=FALSE,row.names=FALSE)
++}
++print(read.csv(file.path(out,'module_summary.csv')));print(do.call(rbind,rows));if(p$disagreeing>0 || any(vapply(rows,function(x)x$status=='FAIL',logical(1))))quit(status=1)
+diff --git a/validation/audit/instrument_reference.R b/validation/audit/instrument_reference.R
+new file mode 100644
+index 0000000..cc06f1e
+--- /dev/null
++++ b/validation/audit/instrument_reference.R
+@@ -0,0 +1,29 @@
++# Diagnostic clone: record values after assignment, with expressions and their
++# order unchanged. Original WGCNA namespace/function remains untouched.
++instrument_blockwise <- function() {
++ f <- WGCNA::blockwiseModules
++ inject <- function(x) {
++  if(!is.call(x)) return(x)
++  if(identical(x[[1]],as.name('{'))) {
++   out<-list(as.name('{'))
++   for(i in seq.int(2,length(x))) {
++    e<-inject(x[[i]]);out[[length(out)+1]]<-e
++    if(is.call(e) && as.character(e[[1]])[1] %in% c('=','<-') && identical(e[[2]],as.name('goodLabels'))) {
++      out[[length(out)+1]]<-quote(write.table(data.frame(ID=colnames(datExpr)[gsg$goodGenes],label=goodLabels),file.path(outdir,'cleanup.tsv'),sep='\t',quote=FALSE,row.names=FALSE))
++    }
++   }
++   return(as.call(out))
++  }
++  for(i in seq_along(x)[-1]) if(is.call(x[[i]])) x[[i]]<-inject(x[[i]])
++  x
++ }
++ body(f)<-inject(body(f)); e<-new.env(parent=environment(WGCNA::blockwiseModules))
++ e$outdir<-outdir
++ e$cutreeDynamic<-function(...) {
++  z<-dynamicTreeCut::cutreeDynamic(...)
++  write.table(data.frame(ID=genes,label=z),file.path(outdir,'dynamic_actual.tsv'),sep='\t',quote=FALSE,row.names=FALSE)
++  z
++ }
++ environment(e$cutreeDynamic)<-environment()
++ environment(f)<-e;f
++}
+diff --git a/validation/audit/investigate_reassignment.R b/validation/audit/investigate_reassignment.R
+new file mode 100644
+index 0000000..c6c5d78
+--- /dev/null
++++ b/validation/audit/investigate_reassignment.R
+@@ -0,0 +1,15 @@
++suppressMessages(library(WGCNA));source('scripts/compare.R')
++base<-'validation/audit/artifacts';d<-file.path(base,'diagnostic_12000_r');u<-file.path(base,'diagnostic_12000_rust');genes<-readLines(file.path(d,'filtered_genes.txt'))
++e<-read.delim('Demo/WGCNA_fpkm_data.txt',row.names=1,check.names=FALSE);x<-t(log10(as.matrix(e[genes,,drop=FALSE])+1));g<-'ENSG00000149541'
++read_stage<-function(dir,f){z<-read.delim(file.path(dir,f),check.names=FALSE);stopifnot(setequal(z[[1]],genes));as.character(z[match(genes,z[[1]]),2])}
++rows<-list()
++for(impl in c('r','rust'))for(stage in c('dynamic','cleanup')) {
++ dir<-if(impl=='r')d else u;labels<-read_stage(dir,paste0(stage,'.tsv'));ids<-sort(setdiff(unique(labels),'0'))
++ me<-moduleEigengenes(x[,labels!='0',drop=FALSE],labels[labels!='0'])$eigengenes
++ k<-abs(as.numeric(cor(x[,g],me)));names(k)<-substring(colnames(me),3);own<-labels[match(g,genes)];best<-names(which.max(k));ratio<-corPvalueFisher(k[best],nrow(x))/corPvalueFisher(k[own],nrow(x))
++ rows[[paste(impl,stage)]]<-data.frame(impl,stage,gene=g,own_label=own,best_label=best,own_abs_kME=k[own],best_abs_kME=k[best],p_own=corPvalueFisher(k[own],nrow(x)),p_best=corPvalueFisher(k[best],nrow(x)),ratio=ratio,threshold=1e-6,distance=ratio-1e-6,reassign=ratio<1e-6)
++}
++r<-do.call(rbind,rows);write.table(r,file.path(base,'diagnostic_12000_comparison/reassignment_thresholds.tsv'),sep='\t',quote=FALSE,row.names=FALSE);print(r)
++# Determine if actual blockwise cut equals independently reconstructed cut.
++a<-read_stage(d,'dynamic_actual.tsv');b<-read_stage(d,'dynamic.tsv');print(table(actual=a,reconstructed=b));stopifnot(identical(a,b))
++writeLines('PASS: actual R blockwise cut labels identical to standalone exported dynamic labels',file.path(base,'diagnostic_12000_comparison/actual_cut_check.txt'))
+diff --git a/validation/audit/negative_controls.R b/validation/audit/negative_controls.R
+new file mode 100644
+index 0000000..8ec298a
+--- /dev/null
++++ b/validation/audit/negative_controls.R
+@@ -0,0 +1,29 @@
++args<-commandArgs(TRUE); root<-normalizePath(args[1]); base<-file.path(root,'validation/audit/artifacts/baseline'); out<-file.path(root,'validation/audit/artifacts/negative_controls');dir.create(out,recursive=TRUE,showWarnings=FALSE)
++source(file.path(root,'scripts/compare.R'))
++results<-list()
++for(test in c('unchanged','missing_file','numeric_change','unexpected_NA','unexpected_NaN','unexpected_Inf','unexpected_minusInf','duplicate_ID','unexpected_ID','reordered_ids','shuffled_labels','missing_colors','sample_ID_change','numeric_metrics','partition_renaming')) {
++ dest<-file.path(out,test);dir.create(dest,showWarnings=FALSE);file.copy(list.files(file.path(base,'rust_out'),full.names=TRUE),dest,overwrite=TRUE)
++ path<-file.path(dest,'cor.tsv');d<-read.delim(path,check.names=FALSE)
++ if(test=='missing_file') unlink(path)
++ if(test=='numeric_change') {d[1,2]<-d[1,2]+.1;write.table(d,path,sep='\t',quote=FALSE,row.names=FALSE)}
++ if(test %in% c('unexpected_NA','unexpected_NaN','unexpected_Inf','unexpected_minusInf')) {d[1,2]<-switch(test,unexpected_NA=NA_real_,unexpected_NaN=NaN,unexpected_Inf=Inf,unexpected_minusInf=-Inf);write.table(d,path,sep='\t',quote=FALSE,row.names=FALSE)}
++ if(test=='duplicate_ID') {d[2,1]<-d[1,1];write.table(d,path,sep='\t',quote=FALSE,row.names=FALSE)}
++ if(test=='unexpected_ID') {d[1,1]<-'unknown_gene';write.table(d,path,sep='\t',quote=FALSE,row.names=FALSE)}
++ if(test=='reordered_ids') for(f in c('adjacency.tsv','tom.tsv','eigengenes.tsv','kme.tsv','module_trait_cor.tsv','module_trait_p.tsv')) {
++  x<-read.delim(file.path(dest,f),check.names=FALSE);x<-x[nrow(x):1,c(1,ncol(x):2)];write.table(x,file.path(dest,f),sep='\t',quote=FALSE,row.names=FALSE)
++ }
++ if(test=='shuffled_labels') {p<-file.path(dest,'module_colors.tsv');x<-readLines(p);writeLines(rev(x),p)}
++ if(test=='missing_colors') unlink(file.path(dest,'module_colors.tsv'))
++ if(test=='sample_ID_change') {p<-file.path(dest,'eigengenes.tsv');x<-read.delim(p,check.names=FALSE);x[1,1]<-'unknown_sample';write.table(x,p,sep='\t',quote=FALSE,row.names=FALSE)}
++ if(test=='numeric_metrics') {
++  x<-matrix(c(0,2),2,dimnames=list(c('a','b'),'v'));y<-matrix(c(0,1),2,dimnames=dimnames(x));z<-error_metrics(x,y,.1)
++  good<-z$max_abs==1 && z$mean_abs==.5 && abs(z$rmse-sqrt(.5))<1e-15 && z$above_tolerance==1 && z$total==2
++  results[[test]]<-data.frame(test,expected_exit=0,observed_exit=0,status=if(good) 'PASS' else 'FAIL');next
++ }
++ if(test=='partition_renaming') {z<-partition_metrics(c('a','a','b','b'),c('x','x','y','y'));results[[test]]<-data.frame(test,expected_exit=0,observed_exit=0,status=if(z$ARI==1 && z$exact_agreement==0) 'PASS' else 'FAIL');next}
++ cmd<-c(shQuote(file.path(root,'scripts/compare.R')),shQuote(dest),shQuote(file.path(base,'r_out')),'1e-9',shQuote(file.path(dest,'result')),shQuote(file.path(base,'testdata/expr.tsv')))
++ code<-system2('Rscript',cmd,stdout=file.path(dest,'stdout.log'),stderr=file.path(dest,'stderr.log'))
++ expected<-if(test %in% c('unchanged','reordered_ids')) 0 else 1
++ results[[test]]<-data.frame(test,expected_exit=expected,observed_exit=code,status=if(code==expected) 'PASS' else 'FAIL')
++}
++r<-do.call(rbind,results);write.csv(r,file.path(out,'summary.csv'),row.names=FALSE);print(r);if(any(r$status!='PASS'))quit(status=1)
+diff --git a/validation/audit/stats_reference.R b/validation/audit/stats_reference.R
+new file mode 100644
+index 0000000..d454aea
+--- /dev/null
++++ b/validation/audit/stats_reference.R
+@@ -0,0 +1,10 @@
++suppressMessages(library(WGCNA));source('scripts/compare.R');d<-'validation/audit/artifacts/stats_grid';dir.create(d,showWarnings=FALSE)
++x<-read.delim(file.path(d,'rust.tsv'));y<-x;y$student<-mapply(corPvalueStudent,x$r,x$n);y$fisher<-mapply(corPvalueFisher,x$r,x$n)
++write.table(y,file.path(d,'r.tsv'),sep='\t',quote=FALSE,row.names=FALSE)
++rows<-list();for(metric in c('student','fisher')) {
++ a<-matrix(x[[metric]],ncol=1,dimnames=list(as.character(x$ID),metric));b<-matrix(y[[metric]],ncol=1,dimnames=dimnames(a));z<-error_metrics(a,b,1e-9)
++ rows[[metric]]<-cbind(metric,status=if(z$above_tolerance==0)'PASS' else 'FAIL',z)
++}
++r<-do.call(rbind,rows);write.csv(r,file.path(d,'parity_details.csv'),row.names=FALSE);print(r)
++z<-cbind(x,R_student=y$student,R_fisher=y$fisher,student_abs_error=abs(x$student-y$student),fisher_abs_error=abs(x$fisher-y$fisher));write.csv(z,file.path(d,'all_cases.csv'),row.names=FALSE)
++print(z[order(z$student_abs_error,decreasing=TRUE)[1:6],]);if(any(r$status!='PASS'))quit(status=1)

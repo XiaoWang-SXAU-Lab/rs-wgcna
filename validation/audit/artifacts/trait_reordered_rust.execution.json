@@ -1,0 +1,8 @@
+{
+  "name": "trait_reordered_rust",
+  "command": "target/release/rs-wgcna /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/trait.tsv",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 1.3281748294830322,
+  "log": "artifacts/trait_reordered_rust.log"
+}

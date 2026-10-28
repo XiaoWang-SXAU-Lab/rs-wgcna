@@ -1,0 +1,15 @@
+                                 test expected_exit observed_exit status
+unchanged                   unchanged             0             0   PASS
+missing_file             missing_file             1             1   PASS
+numeric_change         numeric_change             1             1   PASS
+unexpected_NA           unexpected_NA             1             1   PASS
+unexpected_NaN         unexpected_NaN             1             1   PASS
+unexpected_Inf         unexpected_Inf             1             1   PASS
+duplicate_ID             duplicate_ID             1             1   PASS
+unexpected_ID           unexpected_ID             1             1   PASS
+reordered_ids           reordered_ids             0             0   PASS
+shuffled_labels       shuffled_labels             1             1   PASS
+missing_colors         missing_colors             1             1   PASS
+sample_ID_change     sample_ID_change             1             1   PASS
+numeric_metrics       numeric_metrics             0             0   PASS
+partition_renaming partition_renaming             0             0   PASS

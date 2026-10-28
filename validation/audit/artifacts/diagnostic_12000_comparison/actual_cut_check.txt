@@ -1,0 +1,1 @@
+PASS: actual R blockwise cut labels identical to standalone exported dynamic labels

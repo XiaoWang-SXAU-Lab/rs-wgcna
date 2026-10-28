@@ -1,0 +1,7 @@
+step	seconds
+log10_normalize	1.525
+mad_topN	0.992
+cor	0.429
+tom	7.558
+module_detection_total	20.056
+module_trait	0.206999999999997

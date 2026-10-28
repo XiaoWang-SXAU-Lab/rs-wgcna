@@ -1,0 +1,8 @@
+{
+  "name": "historical_12000_compare_verified",
+  "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/bench_out/rust12k /Users/shawn/Sync-Document/wgcna/rs_WGCNA/bench_out/r12k /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/historical_12000_comparison",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 1,
+  "seconds": 0.22726988792419434,
+  "log": "artifacts/historical_12000_compare_verified.log"
+}

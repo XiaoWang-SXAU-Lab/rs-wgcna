@@ -3,7 +3,7 @@
 use faer::Mat;
 use rayon::prelude::*;
 
-use crate::network::NetworkType;
+use crate::network::{NetworkType, Power};
 
 /// Apply the network-type adjacency transform to a correlation matrix.
 ///
@@ -14,12 +14,11 @@ use crate::network::NetworkType;
 ///
 /// The diagonal stays `1` (cor(i,i)=1), exactly as in WGCNA.
 ///
-/// Uses integer `powi` (all powers are integers) instead of `powf`, and
-/// parallelizes the element-wise transform — this is ~50x faster than a
-/// sequential `powf` scan, which matters at >10k genes.
+/// Uses `powi` for exactly integral powers and `powf` for real powers.
+/// The element-wise transform is parallelized.
 pub fn adjacency(cor: &Mat<f64>, power: f64, network_type: NetworkType) -> Mat<f64> {
     let g = cor.nrows();
-    let p = power as i32;
+    let p = Power::new(power);
     let n = g * g;
     // 列优先的平铺索引：idx = i + j*g（faer 默认列主序）
     let data: Vec<f64> = (0..n)
@@ -29,11 +28,11 @@ pub fn adjacency(cor: &Mat<f64>, power: f64, network_type: NetworkType) -> Mat<f
             let j = idx / g;
             let c = cor[(i, j)];
             match network_type {
-                NetworkType::Unsigned => c.abs().powi(p),
-                NetworkType::Signed => ((1.0 + c) / 2.0).powi(p),
+                NetworkType::Unsigned => p.apply(c.abs()),
+                NetworkType::Signed => p.apply((1.0 + c) / 2.0),
                 NetworkType::SignedHybrid => {
                     if c > 0.0 {
-                        c.powi(p)
+                        p.apply(c)
                     } else {
                         0.0
                     }

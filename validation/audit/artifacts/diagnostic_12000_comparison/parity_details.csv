@@ -1,0 +1,11 @@
+"metric","status","reason","total","max_abs","mean_abs","rmse","max_relative","above_tolerance","proportion_above","tolerance"
+"module_trait_cor.tsv","FAIL","R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate",55,0.0012625767205313,6.65741650072052e-05,0.000238221707559939,0.667184025834193,10,0.181818181818182,1e-09
+"module_trait_p.tsv","FAIL","R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate",55,0.846204011641099,0.0156020582622368,0.114107157070323,0.851486952307303,10,0.181818181818182,1e-09
+"cor_probe.tsv","PASS","",780000,9.753309271332e-14,2.05475809001796e-15,4.35559323505108e-15,2.73275037042912e-10,0,0,1e-09
+"tom_probe.tsv","PASS","",780000,4.26880752968373e-14,4.77418396334604e-16,1.65402727799579e-15,3.02615530281045e-09,0,0,1e-09
+"sft.tsv","PASS","",90,7.32143234927207e-11,7.90401009014316e-12,1.98046577035637e-11,5.69286158896041e-13,0,0,1e-09
+"tree.tsv","PASS","",35997,6.56141807553468e-14,4.66810583915685e-16,1.534607556308e-15,7.37137574293341e-14,0,0,1e-09
+"dynamic.tsv","PASS","",12000,0,0,0,0,0,0,1e-09
+"eigengenes.tsv","FAIL","R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate",616,0.00135745465220653,3.88443011940986e-05,0.000154587959035034,1.08348419550948,112,0.181818181818182,1e-09
+"kme.tsv","FAIL","R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate",132000,0.00263264095354609,4.78686167479366e-05,0.000184947889578933,51.1239540326795,24000,0.181818181818182,1e-09
+"intramodular.tsv","FAIL","",12000,15.7418341624207,0.00374309530775712,0.143938489384694,0.700927657811886,5183,0.431916666666667,1e-09

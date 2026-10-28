@@ -1,0 +1,1 @@
+{"default_8000_repetitions":3,"default_12000_repetitions":1,"controlled_8000_repetitions":3,"controlled_12000_repetitions":3,"reason":"12K default reference BLAS exceeds 600 seconds per repeat. Preserve complete single repeat; prioritize diagnostic evidence and repeated controlled Scenario B."}

@@ -1,0 +1,8 @@
+{
+  "name": "matrix_032_r",
+  "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_032/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed 2' min 2 0.15",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 2.909168004989624,
+  "log": "artifacts/matrix_032_r.log"
+}

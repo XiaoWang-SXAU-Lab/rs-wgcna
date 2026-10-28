@@ -1,0 +1,8 @@
+{
+  "name": "matrix_006_extra",
+  "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_006",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 0.1690990924835205,
+  "log": "artifacts/matrix_006_extra.log"
+}

@@ -1,0 +1,3 @@
+case,total,exact_agreement,disagreeing,ARI,gene_order_identical,status
+diagnostic_12000_comparison,12000,1,0,1,TRUE,PASS
+diagnostic_8000_comparison,8000,1,0,1,TRUE,PASS

@@ -1,0 +1,8 @@
+{
+  "name": "quarto_render_verified",
+  "command": "quarto render report/benchmark.qmd --output benchmark-audit.html",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 1,
+  "seconds": 3.1898410320281982,
+  "log": "artifacts/quarto_render_verified.log"
+}

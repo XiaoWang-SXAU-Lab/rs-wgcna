@@ -1,0 +1,8 @@
+{
+  "name": "remote_final_recheck",
+  "command": "python3 validation/audit/check_remote.py",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 1,
+  "seconds": 20.05954098701477,
+  "log": "artifacts/remote_final_recheck.log"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "reassignment_rust_measurements_retry",
+  "command": "target/release/examples/audit_reassignment Demo/WGCNA_fpkm_data.txt validation/audit/artifacts/diagnostic_12000_rust > validation/audit/artifacts/diagnostic_12000_comparison/reassignment_rust_measurements_verified.tsv",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 1.087118148803711,
+  "log": "artifacts/reassignment_rust_measurements_retry.log"
+}

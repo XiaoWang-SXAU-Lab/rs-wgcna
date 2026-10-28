@@ -1,0 +1,56 @@
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+binary: rustc
+commit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67
+commit-date: 2026-10-13
+host: aarch64-apple-darwin
+release: 1.99.1
+LLVM version: 23.1.1
+cargo 1.99.1 (5f94df478 2026-08-27)
+R version 4.5.1 (2025-06-13)
+Platform: aarch64-apple-darwin20
+Running under: macOS Tahoe 26.5
+
+Matrix products: default
+BLAS:   /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRblas.0.dylib 
+LAPACK: /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib;  LAPACK version 3.12.1
+
+locale:
+[1] C.UTF-8/C.UTF-8/C.UTF-8/C/C.UTF-8/C.UTF-8
+
+time zone: Asia/Shanghai
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+loaded via a namespace (and not attached):
+[1] compiler_4.5.1
+                                                                                                    zlib 
+                                                                                                "1.2.12" 
+                                                                                                   bzlib 
+                                                                                    "1.0.8, 13-Jul-2019" 
+                                                                                                      xz 
+                                                                                                 "5.6.3" 
+                                                                                              libdeflate 
+                                                                                                  "1.23" 
+                                                                                                    PCRE 
+                                                                                      "10.44 2024-06-07" 
+                                                                                                     ICU 
+                                                                                                  "78.1" 
+                                                                                                     TRE 
+                                                                               "TRE 0.8.0 R_fixes (BSD)" 
+                                                                                                   iconv 
+"Apple or GNU libiconv 1.11 /Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libR.dylib" 
+                                                                                                readline 
+                                                                                                   "5.2" 
+                                                                                                    BLAS 
+                     "/Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRblas.0.dylib" 
+[1] 8
+[1] ‘1.74’
+Darwin Mac 25.5.0 Darwin Kernel Version 25.5.0: Mon Apr 27 20:40:51 PDT 2026; root:xnu-12377.121.6~2/RELEASE_ARM64_T8112 arm64
+Apple M2
+17179869184
+8
+4f5055425ec9999dfe7b15422d24b5bb72cb1f7e
+4f5055425ec9999dfe7b15422d24b5bb72cb1f7e	HEAD
+4f5055425ec9999dfe7b15422d24b5bb72cb1f7e	refs/heads/master

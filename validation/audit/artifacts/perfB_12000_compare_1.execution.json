@@ -1,0 +1,8 @@
+{
+  "name": "perfB_12000_compare_1",
+  "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_rust_1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_comparison_1",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 1,
+  "seconds": 0.16494989395141602,
+  "log": "artifacts/perfB_12000_compare_1.log"
+}

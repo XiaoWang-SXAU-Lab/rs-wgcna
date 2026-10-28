@@ -1,0 +1,31 @@
+               metric status                      reason total      max_abs
+              cor.tsv   PASS                             22500 1.665335e-15
+        adjacency.tsv   PASS                             22500 2.997602e-15
+              tom.tsv   PASS                             22500 1.443290e-15
+              sft.tsv   PASS                                90 1.154632e-13
+       eigengenes.tsv   PASS                               200 3.181483e-15
+              kme.tsv   PASS                               750 4.052314e-15
+ module_trait_cor.tsv   PASS                                10 1.942890e-15
+   module_trait_p.tsv   PASS                                10 1.519118e-12
+    module_colors.tsv   PASS exact disagreements 0 ARI 1   150           NA
+     mean_abs         rmse max_relative above_tolerance proportion_above
+ 1.964100e-16 2.769908e-16 9.795653e-13               0                0
+ 1.562412e-16 3.760969e-16 8.976972e-15               0                0
+ 1.132946e-16 2.129871e-16 5.331054e-15               0                0
+ 1.857302e-14 3.113854e-14 4.951445e-14               0                0
+ 7.533758e-16 1.036374e-15 1.750808e-12               0                0
+ 7.610288e-16 9.868498e-16 3.464290e-12               0                0
+ 1.085243e-15 1.272072e-15 5.774949e-14               0                0
+ 7.642339e-13 9.644990e-13 4.355938e-11               0                0
+           NA           NA           NA              NA               NA
+ tolerance
+     1e-09
+     1e-09
+     1e-09
+     1e-09
+     1e-09
+     1e-09
+     1e-09
+     1e-09
+     1e-09
+RESULT: PASS 

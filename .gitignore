@@ -6,3 +6,14 @@
 *.RData
 .Rhistory
 .DS_Store
+
+# Large local audit exports; selected review evidence is tracked explicitly.
+/validation/audit/artifacts/
+/validation/fixes/artifacts/
+/validation/fixes/runs/
+/validation/fixes/FIX_VERIFICATION.generated.zh-CN.md
+__pycache__/
+*.py[cod]
+
+# Historical local HTML preview; canonical history is retained in validation/audit.
+/report/benchmark-audit.html

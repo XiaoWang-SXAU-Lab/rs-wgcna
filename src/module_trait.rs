@@ -9,6 +9,7 @@ use crate::stats::{cor_pvalue, pearson_vec};
 ///
 /// Returns (cor, p) matrices, each modules x traits.
 pub fn module_trait_cor(me: &Mat<f64>, trait_data: &Mat<f64>) -> (Mat<f64>, Mat<f64>) {
+    assert_eq!(me.nrows(), trait_data.nrows(), "module eigengene/trait sample counts differ");
     let ns = me.nrows();
     let nm = me.ncols();
     let nt = trait_data.ncols();

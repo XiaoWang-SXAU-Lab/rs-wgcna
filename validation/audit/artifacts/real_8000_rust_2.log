@@ -1,0 +1,19 @@
+rust: 36953 genes -> 8000 MAD-top, 6 modules, threads=8
+       26.25 real        75.09 user         3.97 sys
+          2898182144  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              420222  page reclaims
+                  71  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                   2  voluntary context switches
+              918728  involuntary context switches
+        757876755649  instructions retired
+        222782526279  cycles elapsed
+          4293610928  peak memory footprint

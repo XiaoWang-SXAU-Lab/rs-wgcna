@@ -1,0 +1,2282 @@
+[
+  {
+    "name": "environment",
+    "command": "rustc -Vv; cargo -V; Rscript -e 'sessionInfo(); print(extSoftVersion()); print(parallel::detectCores()); print(packageVersion(\"WGCNA\"))'; uname -a; sysctl -n machdep.cpu.brand_string hw.memsize hw.logicalcpu; git rev-parse HEAD; git ls-remote origin HEAD refs/heads/master",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.930354118347168,
+    "log": "artifacts/environment.log"
+  },
+  {
+    "name": "cargo_baseline",
+    "command": "cargo test --workspace",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 23.288371801376343,
+    "log": "artifacts/cargo_baseline.log"
+  },
+  {
+    "name": "parity_baseline",
+    "command": "bash /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/scripts/run_parity.sh 6 1e-9",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 53.59173393249512,
+    "log": "artifacts/parity_baseline.log"
+  },
+  {
+    "name": "build_real",
+    "command": "cargo build --release --example real_bench",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.5959641933441162,
+    "log": "artifacts/build_real.log"
+  },
+  {
+    "name": "real_8000_rust_1",
+    "command": "/usr/bin/time -l target/release/examples/real_bench Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_rust_1 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 31.937249898910522,
+    "log": "artifacts/real_8000_rust_1.log"
+  },
+  {
+    "name": "generate_challenging",
+    "command": "Rscript -e 'x<-read.delim(\"validation/audit/artifacts/baseline/testdata/expr.tsv\",check.names=FALSE); set.seed(20261028); x[2:10,-1]<- -as.matrix(x[2:10,-1]); x[140:150,-1]<-as.matrix(x[140:150,-1])*.2+matrix(rnorm(11*40),11); write.table(x,\"validation/audit/artifacts/challenging.tsv\",sep=\"\\t\",quote=FALSE,row.names=FALSE)'",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.1602470874786377,
+    "log": "artifacts/generate_challenging.log"
+  },
+  {
+    "name": "matrix_000_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_000/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned unsigned min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.0869150161743164,
+    "log": "artifacts/matrix_000_rust.log"
+  },
+  {
+    "name": "matrix_000_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_000/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned unsigned min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.99967622756958,
+    "log": "artifacts/matrix_000_r.log"
+  },
+  {
+    "name": "matrix_000_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_000/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_000/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_000/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.31252503395080566,
+    "log": "artifacts/matrix_000_compare.log"
+  },
+  {
+    "name": "matrix_000_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.19473886489868164,
+    "log": "artifacts/matrix_000_extra.log"
+  },
+  {
+    "name": "matrix_001_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_001/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned unsigned mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2383730411529541,
+    "log": "artifacts/matrix_001_rust.log"
+  },
+  {
+    "name": "matrix_001_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_001/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned unsigned mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.865877866744995,
+    "log": "artifacts/matrix_001_r.log"
+  },
+  {
+    "name": "matrix_001_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_001/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_001/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_001/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.32379913330078125,
+    "log": "artifacts/matrix_001_compare.log"
+  },
+  {
+    "name": "matrix_001_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_001",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17694306373596191,
+    "log": "artifacts/matrix_001_extra.log"
+  },
+  {
+    "name": "matrix_002_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_002/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2339460849761963,
+    "log": "artifacts/matrix_002_rust.log"
+  },
+  {
+    "name": "matrix_002_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_002/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.912122964859009,
+    "log": "artifacts/matrix_002_r.log"
+  },
+  {
+    "name": "matrix_002_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_002/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_002/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_002/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3203001022338867,
+    "log": "artifacts/matrix_002_compare.log"
+  },
+  {
+    "name": "matrix_002_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_002",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17830491065979004,
+    "log": "artifacts/matrix_002_extra.log"
+  },
+  {
+    "name": "matrix_003_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_003/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.30400991439819336,
+    "log": "artifacts/matrix_003_rust.log"
+  },
+  {
+    "name": "matrix_003_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_003/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.966999053955078,
+    "log": "artifacts/matrix_003_r.log"
+  },
+  {
+    "name": "matrix_003_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_003/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_003/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_003/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3172738552093506,
+    "log": "artifacts/matrix_003_compare.log"
+  },
+  {
+    "name": "matrix_003_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_003",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17113924026489258,
+    "log": "artifacts/matrix_003_extra.log"
+  },
+  {
+    "name": "matrix_004_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_004/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed Nowick' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23146510124206543,
+    "log": "artifacts/matrix_004_rust.log"
+  },
+  {
+    "name": "matrix_004_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_004/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed Nowick' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.904261827468872,
+    "log": "artifacts/matrix_004_r.log"
+  },
+  {
+    "name": "matrix_004_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_004/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_004/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_004/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3129260540008545,
+    "log": "artifacts/matrix_004_compare.log"
+  },
+  {
+    "name": "matrix_004_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_004",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.1638650894165039,
+    "log": "artifacts/matrix_004_extra.log"
+  },
+  {
+    "name": "matrix_005_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_005/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed Nowick' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2289571762084961,
+    "log": "artifacts/matrix_005_rust.log"
+  },
+  {
+    "name": "matrix_005_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_005/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed Nowick' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.0149121284484863,
+    "log": "artifacts/matrix_005_r.log"
+  },
+  {
+    "name": "matrix_005_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_005/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_005/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_005/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.31320714950561523,
+    "log": "artifacts/matrix_005_compare.log"
+  },
+  {
+    "name": "matrix_005_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_005",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.16808390617370605,
+    "log": "artifacts/matrix_005_extra.log"
+  },
+  {
+    "name": "matrix_006_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_006/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'unsigned 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22840189933776855,
+    "log": "artifacts/matrix_006_rust.log"
+  },
+  {
+    "name": "matrix_006_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_006/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'unsigned 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.022202253341675,
+    "log": "artifacts/matrix_006_r.log"
+  },
+  {
+    "name": "matrix_006_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_006/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_006/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_006/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3137648105621338,
+    "log": "artifacts/matrix_006_compare.log"
+  },
+  {
+    "name": "matrix_006_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_006",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.1690990924835205,
+    "log": "artifacts/matrix_006_extra.log"
+  },
+  {
+    "name": "matrix_007_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_007/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'unsigned 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22962403297424316,
+    "log": "artifacts/matrix_007_rust.log"
+  },
+  {
+    "name": "matrix_007_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_007/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'unsigned 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.15375018119812,
+    "log": "artifacts/matrix_007_r.log"
+  },
+  {
+    "name": "matrix_007_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_007/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_007/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_007/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3237922191619873,
+    "log": "artifacts/matrix_007_compare.log"
+  },
+  {
+    "name": "matrix_007_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_007",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17711591720581055,
+    "log": "artifacts/matrix_007_extra.log"
+  },
+  {
+    "name": "matrix_008_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_008/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2358400821685791,
+    "log": "artifacts/matrix_008_rust.log"
+  },
+  {
+    "name": "matrix_008_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_008/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.015655040740967,
+    "log": "artifacts/matrix_008_r.log"
+  },
+  {
+    "name": "matrix_008_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_008/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_008/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_008/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.33550000190734863,
+    "log": "artifacts/matrix_008_compare.log"
+  },
+  {
+    "name": "matrix_008_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_008",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.18500685691833496,
+    "log": "artifacts/matrix_008_extra.log"
+  },
+  {
+    "name": "matrix_009_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_009/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2375319004058838,
+    "log": "artifacts/matrix_009_rust.log"
+  },
+  {
+    "name": "matrix_009_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_009/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.2048230171203613,
+    "log": "artifacts/matrix_009_r.log"
+  },
+  {
+    "name": "matrix_009_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_009/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_009/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_009/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3212471008300781,
+    "log": "artifacts/matrix_009_compare.log"
+  },
+  {
+    "name": "matrix_009_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_009",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17106199264526367,
+    "log": "artifacts/matrix_009_extra.log"
+  },
+  {
+    "name": "matrix_010_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_010/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed Nowick 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22945261001586914,
+    "log": "artifacts/matrix_010_rust.log"
+  },
+  {
+    "name": "matrix_010_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_010/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed Nowick 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.0334982872009277,
+    "log": "artifacts/matrix_010_r.log"
+  },
+  {
+    "name": "matrix_010_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_010/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_010/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_010/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.3198049068450928,
+    "log": "artifacts/matrix_010_compare.log"
+  },
+  {
+    "name": "matrix_010_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_010",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.1713881492614746,
+    "log": "artifacts/matrix_010_extra.log"
+  },
+  {
+    "name": "matrix_011_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_011/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed Nowick 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23100805282592773,
+    "log": "artifacts/matrix_011_rust.log"
+  },
+  {
+    "name": "matrix_011_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_011/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned 'signed Nowick 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.9523448944091797,
+    "log": "artifacts/matrix_011_r.log"
+  },
+  {
+    "name": "matrix_011_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_011/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_011/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_011/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.3926229476928711,
+    "log": "artifacts/matrix_011_compare.log"
+  },
+  {
+    "name": "matrix_011_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_011",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.1712779998779297,
+    "log": "artifacts/matrix_011_extra.log"
+  },
+  {
+    "name": "matrix_012_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_012/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed unsigned min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.25449585914611816,
+    "log": "artifacts/matrix_012_rust.log"
+  },
+  {
+    "name": "matrix_012_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_012/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed unsigned min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.023829936981201,
+    "log": "artifacts/matrix_012_r.log"
+  },
+  {
+    "name": "matrix_012_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_012/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_012/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_012/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3173828125,
+    "log": "artifacts/matrix_012_compare.log"
+  },
+  {
+    "name": "matrix_012_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_012",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.1861100196838379,
+    "log": "artifacts/matrix_012_extra.log"
+  },
+  {
+    "name": "matrix_013_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_013/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed unsigned mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23676800727844238,
+    "log": "artifacts/matrix_013_rust.log"
+  },
+  {
+    "name": "matrix_013_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_013/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed unsigned mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.9938442707061768,
+    "log": "artifacts/matrix_013_r.log"
+  },
+  {
+    "name": "matrix_013_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_013/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_013/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_013/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.31114697456359863,
+    "log": "artifacts/matrix_013_compare.log"
+  },
+  {
+    "name": "matrix_013_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_013",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17486810684204102,
+    "log": "artifacts/matrix_013_extra.log"
+  },
+  {
+    "name": "matrix_014_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_014/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23769307136535645,
+    "log": "artifacts/matrix_014_rust.log"
+  },
+  {
+    "name": "matrix_014_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_014/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.9559240341186523,
+    "log": "artifacts/matrix_014_r.log"
+  },
+  {
+    "name": "matrix_014_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_014/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_014/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_014/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3913459777832031,
+    "log": "artifacts/matrix_014_compare.log"
+  },
+  {
+    "name": "matrix_014_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_014",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17282795906066895,
+    "log": "artifacts/matrix_014_extra.log"
+  },
+  {
+    "name": "matrix_015_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_015/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed signed mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23491501808166504,
+    "log": "artifacts/matrix_015_rust.log"
+  },
+  {
+    "name": "matrix_015_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_015/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed signed mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.0066311359405518,
+    "log": "artifacts/matrix_015_r.log"
+  },
+  {
+    "name": "matrix_015_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_015/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_015/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_015/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3202779293060303,
+    "log": "artifacts/matrix_015_compare.log"
+  },
+  {
+    "name": "matrix_015_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_015",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.18473219871520996,
+    "log": "artifacts/matrix_015_extra.log"
+  },
+  {
+    "name": "matrix_016_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_016/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed Nowick' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2333970069885254,
+    "log": "artifacts/matrix_016_rust.log"
+  },
+  {
+    "name": "matrix_016_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_016/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed Nowick' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.014862060546875,
+    "log": "artifacts/matrix_016_r.log"
+  },
+  {
+    "name": "matrix_016_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_016/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_016/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_016/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3095710277557373,
+    "log": "artifacts/matrix_016_compare.log"
+  },
+  {
+    "name": "matrix_016_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_016",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17633414268493652,
+    "log": "artifacts/matrix_016_extra.log"
+  },
+  {
+    "name": "matrix_017_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_017/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed Nowick' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23444628715515137,
+    "log": "artifacts/matrix_017_rust.log"
+  },
+  {
+    "name": "matrix_017_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_017/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed Nowick' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.9339468479156494,
+    "log": "artifacts/matrix_017_r.log"
+  },
+  {
+    "name": "matrix_017_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_017/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_017/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_017/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3141047954559326,
+    "log": "artifacts/matrix_017_compare.log"
+  },
+  {
+    "name": "matrix_017_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_017",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.16718387603759766,
+    "log": "artifacts/matrix_017_extra.log"
+  },
+  {
+    "name": "matrix_018_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_018/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'unsigned 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22815608978271484,
+    "log": "artifacts/matrix_018_rust.log"
+  },
+  {
+    "name": "matrix_018_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_018/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'unsigned 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.0118889808654785,
+    "log": "artifacts/matrix_018_r.log"
+  },
+  {
+    "name": "matrix_018_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_018/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_018/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_018/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3128080368041992,
+    "log": "artifacts/matrix_018_compare.log"
+  },
+  {
+    "name": "matrix_018_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_018",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17175078392028809,
+    "log": "artifacts/matrix_018_extra.log"
+  },
+  {
+    "name": "matrix_019_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_019/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'unsigned 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23166418075561523,
+    "log": "artifacts/matrix_019_rust.log"
+  },
+  {
+    "name": "matrix_019_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_019/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'unsigned 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.017216920852661,
+    "log": "artifacts/matrix_019_r.log"
+  },
+  {
+    "name": "matrix_019_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_019/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_019/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_019/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.30568385124206543,
+    "log": "artifacts/matrix_019_compare.log"
+  },
+  {
+    "name": "matrix_019_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_019",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.1659090518951416,
+    "log": "artifacts/matrix_019_extra.log"
+  },
+  {
+    "name": "matrix_020_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_020/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.231003999710083,
+    "log": "artifacts/matrix_020_rust.log"
+  },
+  {
+    "name": "matrix_020_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_020/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.9372341632843018,
+    "log": "artifacts/matrix_020_r.log"
+  },
+  {
+    "name": "matrix_020_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_020/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_020/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_020/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3087449073791504,
+    "log": "artifacts/matrix_020_compare.log"
+  },
+  {
+    "name": "matrix_020_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_020",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17172503471374512,
+    "log": "artifacts/matrix_020_extra.log"
+  },
+  {
+    "name": "matrix_021_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_021/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.24494576454162598,
+    "log": "artifacts/matrix_021_rust.log"
+  },
+  {
+    "name": "matrix_021_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_021/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.341935873031616,
+    "log": "artifacts/matrix_021_r.log"
+  },
+  {
+    "name": "matrix_021_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_021/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_021/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_021/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.30381107330322266,
+    "log": "artifacts/matrix_021_compare.log"
+  },
+  {
+    "name": "matrix_021_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_021",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17113995552062988,
+    "log": "artifacts/matrix_021_extra.log"
+  },
+  {
+    "name": "matrix_022_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_022/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed Nowick 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23431873321533203,
+    "log": "artifacts/matrix_022_rust.log"
+  },
+  {
+    "name": "matrix_022_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_022/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed Nowick 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.891613006591797,
+    "log": "artifacts/matrix_022_r.log"
+  },
+  {
+    "name": "matrix_022_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_022/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_022/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_022/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.3414950370788574,
+    "log": "artifacts/matrix_022_compare.log"
+  },
+  {
+    "name": "matrix_022_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_022",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.16821813583374023,
+    "log": "artifacts/matrix_022_extra.log"
+  },
+  {
+    "name": "matrix_023_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_023/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed Nowick 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.29379796981811523,
+    "log": "artifacts/matrix_023_rust.log"
+  },
+  {
+    "name": "matrix_023_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_023/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv signed 'signed Nowick 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.0286388397216797,
+    "log": "artifacts/matrix_023_r.log"
+  },
+  {
+    "name": "matrix_023_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_023/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_023/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_023/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.3153247833251953,
+    "log": "artifacts/matrix_023_compare.log"
+  },
+  {
+    "name": "matrix_023_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_023",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.16658425331115723,
+    "log": "artifacts/matrix_023_extra.log"
+  },
+  {
+    "name": "matrix_024_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_024/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' unsigned min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23246407508850098,
+    "log": "artifacts/matrix_024_rust.log"
+  },
+  {
+    "name": "matrix_024_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_024/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' unsigned min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.29679012298584,
+    "log": "artifacts/matrix_024_r.log"
+  },
+  {
+    "name": "matrix_024_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_024/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_024/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_024/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.30004405975341797,
+    "log": "artifacts/matrix_024_compare.log"
+  },
+  {
+    "name": "matrix_024_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_024",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.15919995307922363,
+    "log": "artifacts/matrix_024_extra.log"
+  },
+  {
+    "name": "matrix_025_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_025/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' unsigned mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23420310020446777,
+    "log": "artifacts/matrix_025_rust.log"
+  },
+  {
+    "name": "real_8000_r_1",
+    "command": "/usr/bin/time -l Rscript scripts/real_bench.R Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_r_1 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 245.28997564315796,
+    "log": "artifacts/real_8000_r_1.log"
+  },
+  {
+    "name": "matrix_025_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_025/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' unsigned mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.1494979858398438,
+    "log": "artifacts/matrix_025_r.log"
+  },
+  {
+    "name": "matrix_025_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_025/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_025/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_025/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.739422082901001,
+    "log": "artifacts/matrix_025_compare.log"
+  },
+  {
+    "name": "matrix_025_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_025",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.19855618476867676,
+    "log": "artifacts/matrix_025_extra.log"
+  },
+  {
+    "name": "matrix_026_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_026/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.4340858459472656,
+    "log": "artifacts/matrix_026_rust.log"
+  },
+  {
+    "name": "diagnostic_smoke_rust",
+    "command": "target/release/examples/audit_real Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_smoke/rust 150",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.2984111309051514,
+    "log": "artifacts/diagnostic_smoke_rust.log"
+  },
+  {
+    "name": "matrix_026_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_026/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 7.3078131675720215,
+    "log": "artifacts/matrix_026_r.log"
+  },
+  {
+    "name": "matrix_026_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_026/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_026/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_026/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.062263011932373,
+    "log": "artifacts/matrix_026_compare.log"
+  },
+  {
+    "name": "matrix_026_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_026",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.49724483489990234,
+    "log": "artifacts/matrix_026_extra.log"
+  },
+  {
+    "name": "matrix_027_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_027/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' signed mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.9594669342041016,
+    "log": "artifacts/matrix_027_rust.log"
+  },
+  {
+    "name": "matrix_027_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_027/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' signed mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 7.639981746673584,
+    "log": "artifacts/matrix_027_r.log"
+  },
+  {
+    "name": "matrix_027_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_027/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_027/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_027/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3716728687286377,
+    "log": "artifacts/matrix_027_compare.log"
+  },
+  {
+    "name": "matrix_027_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_027",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.8839280605316162,
+    "log": "artifacts/matrix_027_extra.log"
+  },
+  {
+    "name": "matrix_028_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_028/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed Nowick' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.24753189086914062,
+    "log": "artifacts/matrix_028_rust.log"
+  },
+  {
+    "name": "diagnostic_smoke_r",
+    "command": "Rscript scripts/audit_real_reference.R Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_smoke/r 150",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 15.200321674346924,
+    "log": "artifacts/diagnostic_smoke_r.log"
+  },
+  {
+    "name": "matrix_028_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_028/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed Nowick' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.375804901123047,
+    "log": "artifacts/matrix_028_r.log"
+  },
+  {
+    "name": "matrix_028_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_028/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_028/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_028/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3092179298400879,
+    "log": "artifacts/matrix_028_compare.log"
+  },
+  {
+    "name": "matrix_028_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_028",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.1692979335784912,
+    "log": "artifacts/matrix_028_extra.log"
+  },
+  {
+    "name": "matrix_029_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_029/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed Nowick' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23045706748962402,
+    "log": "artifacts/matrix_029_rust.log"
+  },
+  {
+    "name": "real_8000_rust_2",
+    "command": "/usr/bin/time -l target/release/examples/real_bench Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_rust_2 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 26.26211667060852,
+    "log": "artifacts/real_8000_rust_2.log"
+  },
+  {
+    "name": "matrix_029_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_029/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed Nowick' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.551219940185547,
+    "log": "artifacts/matrix_029_r.log"
+  },
+  {
+    "name": "matrix_029_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_029/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_029/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_029/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2617607116699219,
+    "log": "artifacts/matrix_029_compare.log"
+  },
+  {
+    "name": "matrix_029_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_029",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.14694690704345703,
+    "log": "artifacts/matrix_029_extra.log"
+  },
+  {
+    "name": "matrix_030_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_030/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'unsigned 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22449207305908203,
+    "log": "artifacts/matrix_030_rust.log"
+  },
+  {
+    "name": "matrix_030_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_030/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'unsigned 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.403778076171875,
+    "log": "artifacts/matrix_030_r.log"
+  },
+  {
+    "name": "matrix_030_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_030/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_030/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_030/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3433399200439453,
+    "log": "artifacts/matrix_030_compare.log"
+  },
+  {
+    "name": "matrix_030_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_030",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.15233731269836426,
+    "log": "artifacts/matrix_030_extra.log"
+  },
+  {
+    "name": "matrix_031_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_031/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'unsigned 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22421693801879883,
+    "log": "artifacts/matrix_031_rust.log"
+  },
+  {
+    "name": "matrix_031_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_031/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'unsigned 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.3486430644989014,
+    "log": "artifacts/matrix_031_r.log"
+  },
+  {
+    "name": "matrix_031_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_031/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_031/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_031/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.29595017433166504,
+    "log": "artifacts/matrix_031_compare.log"
+  },
+  {
+    "name": "matrix_031_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_031",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17592191696166992,
+    "log": "artifacts/matrix_031_extra.log"
+  },
+  {
+    "name": "matrix_032_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_032/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22904109954833984,
+    "log": "artifacts/matrix_032_rust.log"
+  },
+  {
+    "name": "matrix_032_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_032/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.909168004989624,
+    "log": "artifacts/matrix_032_r.log"
+  },
+  {
+    "name": "matrix_032_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_032/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_032/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_032/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3075072765350342,
+    "log": "artifacts/matrix_032_compare.log"
+  },
+  {
+    "name": "matrix_032_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_032",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.16088294982910156,
+    "log": "artifacts/matrix_032_extra.log"
+  },
+  {
+    "name": "matrix_033_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_033/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23358964920043945,
+    "log": "artifacts/matrix_033_rust.log"
+  },
+  {
+    "name": "matrix_033_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_033/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.816524028778076,
+    "log": "artifacts/matrix_033_r.log"
+  },
+  {
+    "name": "matrix_033_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_033/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_033/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_033/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2917330265045166,
+    "log": "artifacts/matrix_033_compare.log"
+  },
+  {
+    "name": "matrix_033_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_033",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.16933083534240723,
+    "log": "artifacts/matrix_033_extra.log"
+  },
+  {
+    "name": "matrix_034_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_034/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed Nowick 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22805404663085938,
+    "log": "artifacts/matrix_034_rust.log"
+  },
+  {
+    "name": "matrix_034_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_034/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed Nowick 2' min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.8887031078338623,
+    "log": "artifacts/matrix_034_r.log"
+  },
+  {
+    "name": "matrix_034_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_034/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_034/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_034/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.2992689609527588,
+    "log": "artifacts/matrix_034_compare.log"
+  },
+  {
+    "name": "matrix_034_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_034",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.16346001625061035,
+    "log": "artifacts/matrix_034_extra.log"
+  },
+  {
+    "name": "matrix_035_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_035/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed Nowick 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22618603706359863,
+    "log": "artifacts/matrix_035_rust.log"
+  },
+  {
+    "name": "matrix_035_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_035/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv 'signed hybrid' 'signed Nowick 2' mean 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.8071701526641846,
+    "log": "artifacts/matrix_035_r.log"
+  },
+  {
+    "name": "matrix_035_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_035/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_035/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_035/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.3148179054260254,
+    "log": "artifacts/matrix_035_compare.log"
+  },
+  {
+    "name": "matrix_035_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_035",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.1625070571899414,
+    "log": "artifacts/matrix_035_extra.log"
+  },
+  {
+    "name": "matrix_036_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_036/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23574614524841309,
+    "log": "artifacts/matrix_036_rust.log"
+  },
+  {
+    "name": "matrix_036_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_036/r 1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.901226043701172,
+    "log": "artifacts/matrix_036_r.log"
+  },
+  {
+    "name": "matrix_036_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_036/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_036/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_036/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3023359775543213,
+    "log": "artifacts/matrix_036_compare.log"
+  },
+  {
+    "name": "matrix_036_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_036",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.16260004043579102,
+    "log": "artifacts/matrix_036_extra.log"
+  },
+  {
+    "name": "matrix_037_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 12 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_037/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2348778247833252,
+    "log": "artifacts/matrix_037_rust.log"
+  },
+  {
+    "name": "matrix_037_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_037/r 12 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.9207022190093994,
+    "log": "artifacts/matrix_037_r.log"
+  },
+  {
+    "name": "matrix_037_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_037/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_037/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_037/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3182649612426758,
+    "log": "artifacts/matrix_037_compare.log"
+  },
+  {
+    "name": "matrix_037_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_037",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.16302895545959473,
+    "log": "artifacts/matrix_037_extra.log"
+  },
+  {
+    "name": "matrix_038_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 2.5 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_038/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2286391258239746,
+    "log": "artifacts/matrix_038_rust.log"
+  },
+  {
+    "name": "matrix_038_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_038/r 2.5 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.8739840984344482,
+    "log": "artifacts/matrix_038_r.log"
+  },
+  {
+    "name": "matrix_038_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_038/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_038/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_038/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.3020040988922119,
+    "log": "artifacts/matrix_038_compare.log"
+  },
+  {
+    "name": "matrix_038_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_038",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.16412711143493652,
+    "log": "artifacts/matrix_038_extra.log"
+  },
+  {
+    "name": "matrix_039_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_039/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 0 0",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22934889793395996,
+    "log": "artifacts/matrix_039_rust.log"
+  },
+  {
+    "name": "matrix_039_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_039/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 0 0",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.0516960620880127,
+    "log": "artifacts/matrix_039_r.log"
+  },
+  {
+    "name": "matrix_039_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_039/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_039/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_039/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3152740001678467,
+    "log": "artifacts/matrix_039_compare.log"
+  },
+  {
+    "name": "matrix_039_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_039",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.16568493843078613,
+    "log": "artifacts/matrix_039_extra.log"
+  },
+  {
+    "name": "matrix_040_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_040/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 0 0.25",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23178505897521973,
+    "log": "artifacts/matrix_040_rust.log"
+  },
+  {
+    "name": "matrix_040_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_040/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 0 0.25",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.9619760513305664,
+    "log": "artifacts/matrix_040_r.log"
+  },
+  {
+    "name": "matrix_040_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_040/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_040/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_040/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.32268595695495605,
+    "log": "artifacts/matrix_040_compare.log"
+  },
+  {
+    "name": "matrix_040_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_040",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.16980719566345215,
+    "log": "artifacts/matrix_040_extra.log"
+  },
+  {
+    "name": "matrix_041_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_041/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 0 0.5",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22893285751342773,
+    "log": "artifacts/matrix_041_rust.log"
+  },
+  {
+    "name": "matrix_041_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_041/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 0 0.5",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.9005930423736572,
+    "log": "artifacts/matrix_041_r.log"
+  },
+  {
+    "name": "matrix_041_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_041/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_041/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_041/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3164961338043213,
+    "log": "artifacts/matrix_041_compare.log"
+  },
+  {
+    "name": "matrix_041_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_041",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.16942095756530762,
+    "log": "artifacts/matrix_041_extra.log"
+  },
+  {
+    "name": "matrix_042_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_042/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 1 0",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23718714714050293,
+    "log": "artifacts/matrix_042_rust.log"
+  },
+  {
+    "name": "matrix_042_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_042/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 1 0",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.9820609092712402,
+    "log": "artifacts/matrix_042_r.log"
+  },
+  {
+    "name": "matrix_042_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_042/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_042/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_042/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3316972255706787,
+    "log": "artifacts/matrix_042_compare.log"
+  },
+  {
+    "name": "matrix_042_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_042",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17561101913452148,
+    "log": "artifacts/matrix_042_extra.log"
+  },
+  {
+    "name": "matrix_043_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_043/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 1 0.25",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23955488204956055,
+    "log": "artifacts/matrix_043_rust.log"
+  },
+  {
+    "name": "matrix_043_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_043/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 1 0.25",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.9967198371887207,
+    "log": "artifacts/matrix_043_r.log"
+  },
+  {
+    "name": "matrix_043_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_043/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_043/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_043/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3221781253814697,
+    "log": "artifacts/matrix_043_compare.log"
+  },
+  {
+    "name": "matrix_043_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_043",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.1710832118988037,
+    "log": "artifacts/matrix_043_extra.log"
+  },
+  {
+    "name": "matrix_044_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_044/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 1 0.5",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.22930383682250977,
+    "log": "artifacts/matrix_044_rust.log"
+  },
+  {
+    "name": "matrix_044_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_044/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 1 0.5",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.124504804611206,
+    "log": "artifacts/matrix_044_r.log"
+  },
+  {
+    "name": "matrix_044_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_044/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_044/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_044/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3546319007873535,
+    "log": "artifacts/matrix_044_compare.log"
+  },
+  {
+    "name": "matrix_044_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_044",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.18168902397155762,
+    "log": "artifacts/matrix_044_extra.log"
+  },
+  {
+    "name": "matrix_045_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_045/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 3 0",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.24381732940673828,
+    "log": "artifacts/matrix_045_rust.log"
+  },
+  {
+    "name": "matrix_045_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_045/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 3 0",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.993258237838745,
+    "log": "artifacts/matrix_045_r.log"
+  },
+  {
+    "name": "matrix_045_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_045/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_045/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_045/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.32672119140625,
+    "log": "artifacts/matrix_045_compare.log"
+  },
+  {
+    "name": "matrix_045_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_045",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17316508293151855,
+    "log": "artifacts/matrix_045_extra.log"
+  },
+  {
+    "name": "matrix_046_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_046/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 3 0.25",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2362380027770996,
+    "log": "artifacts/matrix_046_rust.log"
+  },
+  {
+    "name": "matrix_046_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_046/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 3 0.25",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.020211935043335,
+    "log": "artifacts/matrix_046_r.log"
+  },
+  {
+    "name": "matrix_046_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_046/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_046/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_046/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3287508487701416,
+    "log": "artifacts/matrix_046_compare.log"
+  },
+  {
+    "name": "matrix_046_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_046",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.18570804595947266,
+    "log": "artifacts/matrix_046_extra.log"
+  },
+  {
+    "name": "matrix_047_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_047/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 3 0.5",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.24944686889648438,
+    "log": "artifacts/matrix_047_rust.log"
+  },
+  {
+    "name": "matrix_047_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_047/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 3 0.5",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.974928855895996,
+    "log": "artifacts/matrix_047_r.log"
+  },
+  {
+    "name": "matrix_047_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_047/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_047/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_047/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.32517385482788086,
+    "log": "artifacts/matrix_047_compare.log"
+  },
+  {
+    "name": "matrix_047_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_047",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17455577850341797,
+    "log": "artifacts/matrix_047_extra.log"
+  },
+  {
+    "name": "matrix_048_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_048/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 4 0",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23570775985717773,
+    "log": "artifacts/matrix_048_rust.log"
+  },
+  {
+    "name": "matrix_048_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_048/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 4 0",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 2.999446153640747,
+    "log": "artifacts/matrix_048_r.log"
+  },
+  {
+    "name": "matrix_048_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_048/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_048/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_048/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.33069896697998047,
+    "log": "artifacts/matrix_048_compare.log"
+  },
+  {
+    "name": "matrix_048_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_048",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17883896827697754,
+    "log": "artifacts/matrix_048_extra.log"
+  },
+  {
+    "name": "matrix_049_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_049/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 4 0.25",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.23435020446777344,
+    "log": "artifacts/matrix_049_rust.log"
+  },
+  {
+    "name": "matrix_049_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_049/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 4 0.25",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.0680198669433594,
+    "log": "artifacts/matrix_049_r.log"
+  },
+  {
+    "name": "matrix_049_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_049/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_049/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_049/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.3373680114746094,
+    "log": "artifacts/matrix_049_compare.log"
+  },
+  {
+    "name": "matrix_049_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_049",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.17751216888427734,
+    "log": "artifacts/matrix_049_extra.log"
+  },
+  {
+    "name": "matrix_050_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_050/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 4 0.5",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.24352288246154785,
+    "log": "artifacts/matrix_050_rust.log"
+  },
+  {
+    "name": "matrix_050_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_050/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned signed min 4 0.5",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.1113929748535156,
+    "log": "artifacts/matrix_050_r.log"
+  },
+  {
+    "name": "matrix_050_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_050/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_050/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_050/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/challenging.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.33457207679748535,
+    "log": "artifacts/matrix_050_compare.log"
+  },
+  {
+    "name": "matrix_050_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_050",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.1773381233215332,
+    "log": "artifacts/matrix_050_extra.log"
+  },
+  {
+    "name": "matrix_051_rust",
+    "command": "target/release/examples/audit_matrix /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_051/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned none min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.2423410415649414,
+    "log": "artifacts/matrix_051_rust.log"
+  },
+  {
+    "name": "matrix_051_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_051/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv unsigned none min 2 0.15",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.188541889190674,
+    "log": "artifacts/matrix_051_r.log"
+  },
+  {
+    "name": "matrix_051_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_051/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_051/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_051/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.33796143531799316,
+    "log": "artifacts/matrix_051_compare.log"
+  },
+  {
+    "name": "matrix_051_extra",
+    "command": "Rscript validation/audit/compare_extra.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_051",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.18140482902526855,
+    "log": "artifacts/matrix_051_extra.log"
+  },
+  {
+    "name": "real_8000_r_2",
+    "command": "/usr/bin/time -l Rscript scripts/real_bench.R Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_r_2 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 231.64315104484558,
+    "log": "artifacts/real_8000_r_2.log"
+  },
+  {
+    "name": "real_8000_rust_3",
+    "command": "/usr/bin/time -l target/release/examples/real_bench Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_rust_3 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 19.41285514831543,
+    "log": "artifacts/real_8000_rust_3.log"
+  },
+  {
+    "name": "diagnostic_8000_rust",
+    "command": "target/release/examples/audit_real Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_8000_rust 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 38.602778911590576,
+    "log": "artifacts/diagnostic_8000_rust.log"
+  },
+  {
+    "name": "diagnostic_8000_r",
+    "command": "R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH=/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/accelerate_blas VECLIB_MAXIMUM_THREADS=1 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/audit_real_reference.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_8000_r 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 29.751423120498657,
+    "log": "artifacts/diagnostic_8000_r.log"
+  },
+  {
+    "name": "diagnostic_12000_rust",
+    "command": "target/release/examples/audit_real Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_12000_rust 12000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 108.60802268981934,
+    "log": "artifacts/diagnostic_12000_rust.log"
+  },
+  {
+    "name": "cargo_final",
+    "command": "cargo test --workspace",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 101,
+    "seconds": 3.86863112449646,
+    "log": "artifacts/cargo_final.log"
+  },
+  {
+    "name": "controls_final",
+    "command": "Rscript validation/audit/negative_controls.R .",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 7.552602291107178,
+    "log": "artifacts/controls_final.log"
+  },
+  {
+    "name": "diagnostic_12000_r",
+    "command": "R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH=/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/accelerate_blas VECLIB_MAXIMUM_THREADS=1 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/audit_real_reference.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_12000_r 12000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 87.59078001976013,
+    "log": "artifacts/diagnostic_12000_r.log"
+  },
+  {
+    "name": "parity_hardened",
+    "command": "bash scripts/run_parity.sh 6 1e-9 validation/audit/artifacts/hardened",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 2,
+    "seconds": 78.51895117759705,
+    "log": "artifacts/parity_hardened.log"
+  },
+  {
+    "name": "reorder_trait",
+    "command": "Rscript -e 'x<-read.delim(\"/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv\",check.names=FALSE);write.table(x[nrow(x):1,],\"/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/trait.tsv\",sep=\"\\t\",quote=FALSE,row.names=FALSE)' ",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.1558818817138672,
+    "log": "artifacts/reorder_trait.log"
+  },
+  {
+    "name": "trait_reordered_rust",
+    "command": "target/release/rs-wgcna /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/trait.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.3281748294830322,
+    "log": "artifacts/trait_reordered_rust.log"
+  },
+  {
+    "name": "trait_reordered_r",
+    "command": "Rscript scripts/r_reference.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/r 6 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/colors.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/trait.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 3.289539098739624,
+    "log": "artifacts/trait_reordered_r.log"
+  },
+  {
+    "name": "trait_reordered_compare",
+    "command": "Rscript scripts/compare.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/r 1e-9 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/comparison /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/expr.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.3620877265930176,
+    "log": "artifacts/trait_reordered_compare.log"
+  },
+  {
+    "name": "input_alignment",
+    "command": "Rscript -e 'x<-read.delim(\"Demo/WGCNA_fpkm_data.txt\",check.names=FALSE,row.names=1);y<-read.delim(\"Demo/WGCNA_data_trait.txt\",check.names=FALSE,row.names=1);stopifnot(!anyDuplicated(rownames(x)),!anyDuplicated(colnames(x)),!anyDuplicated(rownames(y)),identical(colnames(x),rownames(y)),all(is.finite(as.matrix(x))),all(is.finite(as.matrix(y))));cat(nrow(x),ncol(x),\"gene/sample IDs unique and trait order identical\\n\")'",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.909073829650879,
+    "log": "artifacts/input_alignment.log"
+  },
+  {
+    "name": "real_8000_r_3",
+    "command": "/usr/bin/time -l Rscript scripts/real_bench.R Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_r_3 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 322.9750199317932,
+    "log": "artifacts/real_8000_r_3.log"
+  },
+  {
+    "name": "real_12000_rust_1",
+    "command": "/usr/bin/time -l target/release/examples/real_bench Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_12000_rust_1 12000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 77.72343611717224,
+    "log": "artifacts/real_12000_rust_1.log"
+  },
+  {
+    "name": "parity_hardened_final",
+    "command": "bash -n scripts/run_parity.sh && bash scripts/run_parity.sh 6 1e-9 validation/audit/artifacts/hardened_final",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 6.762375831604004,
+    "log": "artifacts/parity_hardened_final.log"
+  },
+  {
+    "name": "build_stats",
+    "command": "cargo build --release --example audit_stats",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.3818299770355225,
+    "log": "artifacts/build_stats.log"
+  },
+  {
+    "name": "stats_grid_rust",
+    "command": "mkdir -p validation/audit/artifacts/stats_grid && target/release/examples/audit_stats > validation/audit/artifacts/stats_grid/rust.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.8688881397247314,
+    "log": "artifacts/stats_grid_rust.log"
+  },
+  {
+    "name": "stats_grid_reference",
+    "command": "Rscript validation/audit/stats_reference.R",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 1.4644789695739746,
+    "log": "artifacts/stats_grid_reference.log"
+  },
+  {
+    "name": "reassignment_investigation",
+    "command": "Rscript validation/audit/investigate_reassignment.R",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 4.954697132110596,
+    "log": "artifacts/reassignment_investigation.log"
+  },
+  {
+    "name": "build_reassignment",
+    "command": "cargo build --release --example audit_reassignment",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.887221097946167,
+    "log": "artifacts/build_reassignment.log"
+  },
+  {
+    "name": "reassignment_rust_measurements",
+    "command": "target/release/examples/audit_reassignment Demo/WGCNA_fpkm_data.txt validation/audit/artifacts/diagnostic_12000_rust > validation/audit/artifacts/diagnostic_12000_comparison/reassignment_rust_measurements.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 101,
+    "seconds": 0.9483850002288818,
+    "log": "artifacts/reassignment_rust_measurements.log"
+  },
+  {
+    "name": "cargo_verified",
+    "command": "cargo test --workspace",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 101,
+    "seconds": 2.1795027256011963,
+    "log": "artifacts/cargo_verified.log"
+  },
+  {
+    "name": "build_reassignment_retry",
+    "command": "cargo build --release --example audit_reassignment",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.5752859115600586,
+    "log": "artifacts/build_reassignment_retry.log"
+  },
+  {
+    "name": "reassignment_rust_measurements_retry",
+    "command": "target/release/examples/audit_reassignment Demo/WGCNA_fpkm_data.txt validation/audit/artifacts/diagnostic_12000_rust > validation/audit/artifacts/diagnostic_12000_comparison/reassignment_rust_measurements_verified.tsv",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.087118148803711,
+    "log": "artifacts/reassignment_rust_measurements_retry.log"
+  },
+  {
+    "name": "controls_verified",
+    "command": "Rscript validation/audit/negative_controls.R .",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 4.773136854171753,
+    "log": "artifacts/controls_verified.log"
+  },
+  {
+    "name": "real_8000_compare_1",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_rust_1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_r_1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_comparison_1",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.24547195434570312,
+    "log": "artifacts/real_8000_compare_1.log"
+  },
+  {
+    "name": "real_8000_compare_2",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_rust_2 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_r_2 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_comparison_2",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.2139730453491211,
+    "log": "artifacts/real_8000_compare_2.log"
+  },
+  {
+    "name": "real_8000_compare_3",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_rust_3 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_r_3 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_8000_comparison_3",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.20142102241516113,
+    "log": "artifacts/real_8000_compare_3.log"
+  },
+  {
+    "name": "historical_8000_compare_verified",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/bench_out/rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/bench_out/r /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/historical_8000_comparison",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.20191597938537598,
+    "log": "artifacts/historical_8000_compare_verified.log"
+  },
+  {
+    "name": "diagnostic_8000_compare_verified",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_8000_rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_8000_r /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_8000_comparison",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 22.19164204597473,
+    "log": "artifacts/diagnostic_8000_compare_verified.log"
+  },
+  {
+    "name": "historical_12000_compare_verified",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/bench_out/rust12k /Users/shawn/Sync-Document/wgcna/rs_WGCNA/bench_out/r12k /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/historical_12000_comparison",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.22726988792419434,
+    "log": "artifacts/historical_12000_compare_verified.log"
+  },
+  {
+    "name": "diagnostic_12000_compare_verified",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_12000_rust /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_12000_r /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_12000_comparison",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 47.845730781555176,
+    "log": "artifacts/diagnostic_12000_compare_verified.log"
+  },
+  {
+    "name": "cargo_verified_final",
+    "command": "cargo test --workspace",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 101,
+    "seconds": 2.7726500034332275,
+    "log": "artifacts/cargo_verified_final.log"
+  },
+  {
+    "name": "real_12000_r_1",
+    "command": "/usr/bin/time -l Rscript scripts/real_bench.R Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/real_12000_r_1 12000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 834.0614728927612,
+    "log": "artifacts/real_12000_r_1.log"
+  },
+  {
+    "name": "perfB_8000_rust_1",
+    "command": "AUDIT_THREADS=8 RAYON_NUM_THREADS=8 target/release/examples/audit_perf Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_rust_1 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 16.83448100090027,
+    "log": "artifacts/perfB_8000_rust_1.log"
+  },
+  {
+    "name": "perfB_8000_r_1",
+    "command": "R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH=/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/accelerate_blas VECLIB_MAXIMUM_THREADS=8 ALLOW_WGCNA_THREADS=8 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_r_1 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 12.95604395866394,
+    "log": "artifacts/perfB_8000_r_1.log"
+  },
+  {
+    "name": "nowick2_reference_verified",
+    "command": "Rscript -e 'suppressMessages(library(WGCNA));x<-cbind(a=as.numeric(1:4),b=-as.numeric(1:4));for(nt in c(\"unsigned\",\"signed\",\"signed hybrid\")){print(nt);print(TOMsimilarityFromExpr(x,networkType=nt,TOMType=\"signed Nowick 2\",power=6,verbose=0))};print(WGCNA:::.TOMTypes);writeLines(deparse(TOMsimilarityFromExpr),\"validation/audit/artifacts/TOMsimilarityFromExpr_reference.R\")' ",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 1.7088818550109863,
+    "log": "artifacts/nowick2_reference_verified.log"
+  },
+  {
+    "name": "default_12000_compare_final",
+    "command": "Rscript validation/audit/compare_real.R validation/audit/artifacts/real_12000_rust_1 validation/audit/artifacts/real_12000_r_1 validation/audit/artifacts/real_12000_comparison_1",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.30377697944641113,
+    "log": "artifacts/default_12000_compare_final.log"
+  },
+  {
+    "name": "perfB_8000_rust_2",
+    "command": "AUDIT_THREADS=8 RAYON_NUM_THREADS=8 target/release/examples/audit_perf Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_rust_2 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 15.116846084594727,
+    "log": "artifacts/perfB_8000_rust_2.log"
+  },
+  {
+    "name": "perfB_8000_r_2",
+    "command": "R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH=/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/accelerate_blas VECLIB_MAXIMUM_THREADS=8 ALLOW_WGCNA_THREADS=8 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_r_2 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 12.68016505241394,
+    "log": "artifacts/perfB_8000_r_2.log"
+  },
+  {
+    "name": "perfB_8000_rust_3",
+    "command": "AUDIT_THREADS=8 RAYON_NUM_THREADS=8 target/release/examples/audit_perf Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_rust_3 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 15.906564235687256,
+    "log": "artifacts/perfB_8000_rust_3.log"
+  },
+  {
+    "name": "perfB_8000_r_3",
+    "command": "R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH=/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/accelerate_blas VECLIB_MAXIMUM_THREADS=8 ALLOW_WGCNA_THREADS=8 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_r_3 8000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 12.734692096710205,
+    "log": "artifacts/perfB_8000_r_3.log"
+  },
+  {
+    "name": "stage_alignment_verified",
+    "command": "Rscript validation/audit/check_stages.R",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.8447210788726807,
+    "log": "artifacts/stage_alignment_verified.log"
+  },
+  {
+    "name": "unchanged_production",
+    "command": "git diff --exit-code -- src Cargo.toml Cargo.lock Demo bench_out report/benchmark.html",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.035253047943115234,
+    "log": "artifacts/unchanged_production.log"
+  },
+  {
+    "name": "perfB_12000_rust_1",
+    "command": "AUDIT_THREADS=8 RAYON_NUM_THREADS=8 target/release/examples/audit_perf Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_rust_1 12000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 61.04511284828186,
+    "log": "artifacts/perfB_12000_rust_1.log"
+  },
+  {
+    "name": "perfB_12000_r_1",
+    "command": "R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH=/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/accelerate_blas VECLIB_MAXIMUM_THREADS=8 ALLOW_WGCNA_THREADS=8 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_1 12000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 28.847814083099365,
+    "log": "artifacts/perfB_12000_r_1.log"
+  },
+  {
+    "name": "perfB_12000_rust_2",
+    "command": "AUDIT_THREADS=8 RAYON_NUM_THREADS=8 target/release/examples/audit_perf Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_rust_2 12000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 54.43471884727478,
+    "log": "artifacts/perfB_12000_rust_2.log"
+  },
+  {
+    "name": "perfB_12000_r_2",
+    "command": "R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH=/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/accelerate_blas VECLIB_MAXIMUM_THREADS=8 ALLOW_WGCNA_THREADS=8 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_2 12000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 32.03345704078674,
+    "log": "artifacts/perfB_12000_r_2.log"
+  },
+  {
+    "name": "perfB_12000_rust_3",
+    "command": "AUDIT_THREADS=8 RAYON_NUM_THREADS=8 target/release/examples/audit_perf Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_rust_3 12000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 57.299960136413574,
+    "log": "artifacts/perfB_12000_rust_3.log"
+  },
+  {
+    "name": "perfB_12000_r_3",
+    "command": "R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH=/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/accelerate_blas VECLIB_MAXIMUM_THREADS=8 ALLOW_WGCNA_THREADS=8 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_3 12000",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 31.85688090324402,
+    "log": "artifacts/perfB_12000_r_3.log"
+  },
+  {
+    "name": "matrix_final_failure_semantics",
+    "command": "python3 validation/audit/run_matrix.py --summarize-existing",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.052160024642944336,
+    "log": "artifacts/matrix_final_failure_semantics.log"
+  },
+  {
+    "name": "perfB_8000_compare_1",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_rust_1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_r_1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_comparison_1",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.18674707412719727,
+    "log": "artifacts/perfB_8000_compare_1.log"
+  },
+  {
+    "name": "perfB_8000_compare_2",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_rust_2 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_r_2 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_comparison_2",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.16420197486877441,
+    "log": "artifacts/perfB_8000_compare_2.log"
+  },
+  {
+    "name": "perfB_8000_compare_3",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_rust_3 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_r_3 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_comparison_3",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.1631317138671875,
+    "log": "artifacts/perfB_8000_compare_3.log"
+  },
+  {
+    "name": "perfB_12000_compare_1",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_rust_1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_comparison_1",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.16494989395141602,
+    "log": "artifacts/perfB_12000_compare_1.log"
+  },
+  {
+    "name": "perfB_12000_compare_2",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_rust_2 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_2 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_comparison_2",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.16497802734375,
+    "log": "artifacts/perfB_12000_compare_2.log"
+  },
+  {
+    "name": "perfB_12000_compare_3",
+    "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_rust_3 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_3 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_comparison_3",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 0.1693251132965088,
+    "log": "artifacts/perfB_12000_compare_3.log"
+  },
+  {
+    "name": "quarto_render",
+    "command": "quarto render report/benchmark.qmd --output benchmark-audit.html",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 3.8842320442199707,
+    "log": "artifacts/quarto_render.log"
+  },
+  {
+    "name": "quarto_render_verified",
+    "command": "quarto render report/benchmark.qmd --output benchmark-audit.html",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 3.1898410320281982,
+    "log": "artifacts/quarto_render_verified.log"
+  },
+  {
+    "name": "validation_script_syntax",
+    "command": "python3 -m py_compile validation/audit/*.py && bash -n scripts/run_parity.sh && Rscript -e 'for(p in c(list.files(\"scripts\",pattern=\"[.]R$\",full.names=TRUE),list.files(\"validation/audit\",pattern=\"[.]R$\",full.names=TRUE))) parse(p);cat(\"R scripts parsed successfully\\n\")'",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.1904299259185791,
+    "log": "artifacts/validation_script_syntax.log"
+  },
+  {
+    "name": "final_production_diff",
+    "command": "git diff --exit-code -- src Cargo.toml Cargo.lock Demo bench_out report/benchmark.html",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 0,
+    "seconds": 0.022652149200439453,
+    "log": "artifacts/final_production_diff.log"
+  },
+  {
+    "name": "quarto_render_final",
+    "command": "quarto render report/benchmark.qmd --output benchmark-audit.html",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 3.1337618827819824,
+    "log": "artifacts/quarto_render_final.log"
+  },
+  {
+    "name": "quarto_render_successful",
+    "command": "quarto render benchmark.qmd --output benchmark-audit.html",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA/report",
+    "exit_code": 0,
+    "seconds": 3.527039051055908,
+    "log": "artifacts/quarto_render_successful.log"
+  },
+  {
+    "name": "remote_final_recheck",
+    "command": "python3 validation/audit/check_remote.py",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+    "exit_code": 1,
+    "seconds": 20.05954098701477,
+    "log": "artifacts/remote_final_recheck.log"
+  },
+  {
+    "name": "quarto_render_delivery",
+    "command": "quarto render benchmark.qmd --output benchmark-audit.html",
+    "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA/report",
+    "exit_code": 0,
+    "seconds": 3.8575661182403564,
+    "log": "artifacts/quarto_render_delivery.log"
+  }
+]

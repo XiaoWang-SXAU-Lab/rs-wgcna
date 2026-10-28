@@ -1,0 +1,3 @@
+suppressMessages(library(WGCNA));suppressMessages(library(jsonlite))
+x<-list(R=R.version.string,WGCNA=as.character(packageVersion('WGCNA')),dynamicTreeCut=as.character(packageVersion('dynamicTreeCut')),fastcluster=as.character(packageVersion('fastcluster')),BLAS=unname(extSoftVersion()['BLAS']),LAPACK=La_library(),R_platform=R.version$platform,logical_cores=parallel::detectCores(),WGCNA_threads=WGCNAnThreads(),environment=as.list(Sys.getenv(c('ALLOW_WGCNA_THREADS','RAYON_NUM_THREADS','OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','VECLIB_MAXIMUM_THREADS'))))
+write_json(x,commandArgs(TRUE)[1],auto_unbox=TRUE,pretty=TRUE)

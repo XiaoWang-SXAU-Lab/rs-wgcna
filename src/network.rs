@@ -63,3 +63,26 @@ impl TomDenom {
         }
     }
 }
+
+/// Preserve the integer fast path without truncating valid real powers.
+#[derive(Clone, Copy)]
+pub(crate) enum Power {
+    Integer(i32),
+    Real(f64),
+}
+impl Power {
+    pub(crate) fn new(value: f64) -> Self {
+        if value.fract() == 0.0 && value >= i32::MIN as f64 && value <= i32::MAX as f64 {
+            Self::Integer(value as i32)
+        } else {
+            Self::Real(value)
+        }
+    }
+    #[inline]
+    pub(crate) fn apply(self, value: f64) -> f64 {
+        match self {
+            Self::Integer(p) => value.powi(p),
+            Self::Real(p) => value.powf(p),
+        }
+    }
+}

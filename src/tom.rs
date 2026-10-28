@@ -10,7 +10,7 @@ use faer::linalg::matmul::matmul;
 use faer::{Accum, Mat, Par};
 use rayon::prelude::*;
 
-use crate::network::{NetworkType, TomDenom, TomType};
+use crate::network::{NetworkType, Power, TomDenom, TomType};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AdjType {
@@ -37,18 +37,17 @@ impl SyncBuf {
 }
 
 #[inline]
-fn adj_transform(c: f64, power: f64, t: AdjType) -> f64 {
-    let p = power as i32;
+fn adj_transform(c: f64, p: Power, t: AdjType) -> f64 {
     match t {
-        AdjType::Unsigned => c.abs().powi(p),
+        AdjType::Unsigned => p.apply(c.abs()),
         AdjType::UnsignedKeepSign => {
             let s = if c < 0.0 { -1.0 } else { 1.0 };
-            s * c.abs().powi(p)
+            s * p.apply(c.abs())
         }
-        AdjType::Signed => ((1.0 + c) / 2.0).powi(p),
+        AdjType::Signed => p.apply((1.0 + c) / 2.0),
         AdjType::Hybrid => {
             if c > 0.0 {
-                c.powi(p)
+                p.apply(c)
             } else {
                 0.0
             }
@@ -83,7 +82,9 @@ pub fn tom_from_cor(
                 adj_type = AdjType::UnsignedKeepSign;
             }
         }
-        TomType::SignedNowick | TomType::SignedNowick2 => {
+        // WGCNA only overrides adjacency for the original Nowick form.
+        // The "2" form retains the selected network adjacency mapping.
+        TomType::SignedNowick => {
             adj_type = AdjType::UnsignedKeepSign;
         }
         TomType::Unsigned | TomType::Unsigned2 => {
@@ -95,10 +96,11 @@ pub fn tom_from_cor(
     }
 
     // Build adjacency.
+    let exponent = Power::new(power);
     let mut flat_a = vec![0.0f64; g * g];
     flat_a.par_chunks_mut(g).enumerate().for_each(|(j, col)| {
         for i in 0..g {
-            col[i] = adj_transform(cor[(i, j)], power, adj_type);
+            col[i] = adj_transform(cor[(i, j)], exponent, adj_type);
         }
     });
     let a = Mat::from_fn(g, g, |i, j| flat_a[j * g + i]);

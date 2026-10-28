@@ -1,0 +1,8 @@
+{
+  "name": "reorder_trait",
+  "command": "Rscript -e 'x<-read.delim(\"/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/baseline/testdata/trait.tsv\",check.names=FALSE);write.table(x[nrow(x):1,],\"/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/trait_reordered/trait.tsv\",sep=\"\\t\",quote=FALSE,row.names=FALSE)' ",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 0.1558818817138672,
+  "log": "artifacts/reorder_trait.log"
+}

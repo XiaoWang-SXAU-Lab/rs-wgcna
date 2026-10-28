@@ -1,0 +1,8 @@
+{
+  "name": "parity_hardened",
+  "command": "bash scripts/run_parity.sh 6 1e-9 validation/audit/artifacts/hardened",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 2,
+  "seconds": 78.51895117759705,
+  "log": "artifacts/parity_hardened.log"
+}

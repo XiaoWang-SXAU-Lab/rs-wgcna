@@ -1,0 +1,4 @@
+
+thread 'main' (6376239) panicked at examples/audit_reassignment.rs:14:118:
+called `Result::unwrap()` on an `Err` value: ParseIntError { kind: InvalidDigit }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

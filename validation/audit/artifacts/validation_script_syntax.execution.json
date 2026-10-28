@@ -1,0 +1,8 @@
+{
+  "name": "validation_script_syntax",
+  "command": "python3 -m py_compile validation/audit/*.py && bash -n scripts/run_parity.sh && Rscript -e 'for(p in c(list.files(\"scripts\",pattern=\"[.]R$\",full.names=TRUE),list.files(\"validation/audit\",pattern=\"[.]R$\",full.names=TRUE))) parse(p);cat(\"R scripts parsed successfully\\n\")'",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 0.1904299259185791,
+  "log": "artifacts/validation_script_syntax.log"
+}

@@ -1,0 +1,8 @@
+{
+  "name": "stats_grid_reference",
+  "command": "Rscript validation/audit/stats_reference.R",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 1,
+  "seconds": 1.4644789695739746,
+  "log": "artifacts/stats_grid_reference.log"
+}

@@ -1,0 +1,27 @@
+ M NEWS.md
+ M README.md
+ M README.zh-CN.md
+ M examples/real_bench.rs
+ M report/benchmark.qmd
+ M scripts/compare.R
+ M scripts/r_reference.R
+ M scripts/run_parity.sh
+ M src/adjacency.rs
+ M src/bin/worker.rs
+ M src/io.rs
+ M src/main.rs
+ M src/module_trait.rs
+ M src/network.rs
+ M src/pipeline.rs
+ M src/stats.rs
+ M src/tom.rs
+?? examples/audit_matrix.rs
+?? examples/audit_perf.rs
+?? examples/audit_real.rs
+?? examples/audit_reassignment.rs
+?? examples/audit_stats.rs
+?? report/benchmark-audit.html
+?? report/benchmark-fixed.html
+?? scripts/audit_real_reference.R
+?? tests/
+?? validation/

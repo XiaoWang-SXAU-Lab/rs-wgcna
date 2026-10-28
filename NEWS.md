@@ -3,6 +3,42 @@
 All notable changes to rs-WGCNA are documented in this file. The format is based
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+
+- Stabilize Student correlation P-values for weak correlations using the
+  complementary incomplete beta calculation rather than an unconverged fraction;
+  handle infinite Fisher z statistics at perfect correlation explicitly.
+- Preserve fractional soft-threshold powers in adjacency/TOM while retaining the
+  integer fast path; match R's network mapping for `signed Nowick 2` TOM.
+- Reuse the original dynamic-module eigengenes during post-cleanup reassignment,
+  excluding deleted modules and removing modules made too small by reassignment.
+- Align uploaded traits by sample ID in the CLI, worker and benchmarks; reject
+  duplicate/missing IDs and malformed rows rather than silently pairing values.
+- Export benchmark continuous values at full precision for strict comparisons.
+
+### Validation and audit
+
+- A scientific audit of baseline `4f505542` reproduced the 12K gene mismatch and
+  identified fractional-power truncation, `signed Nowick 2` mapping differences,
+  unstable weak-correlation Student P-values, and positional trait alignment.
+- The 12K discrepancy involved `ENSG00000149541`: R retained turquoise while Rust
+  assigned yellow. Reassignment used original dynamic-module eigengenes in R and
+  recomputed cleaned-module eigengenes in Rust. Matching the eigengene basis
+  resolves the difference without changing the `1e-6` reassignment threshold.
+- Verification passes: 22 Rust tests, 52 parameter configurations, 15 validator
+  controls, 664 exported comparisons, and 252-point Student/Fisher grids at the
+  unchanged absolute tolerance `1e-9`. Final labels match R for all 8K/12K genes
+  (100%, ARI=1). Large-data correlation/TOM coverage uses labelled row probes.
+- Add machine-readable results and bilingual reports:
+  [English](validation/fixes/FIX_VERIFICATION.md) /
+  [中文](validation/fixes/FIX_VERIFICATION.zh-CN.md).
+- Scientific audit, implementation fixes, regression testing and audit reporting
+  were completed by **OpenAI Codex (ChatGPT)** at the maintainer's request.
+- README validation and performance descriptions now state measured coverage and
+  resource requirements; single precision/out-of-core computation remain planned.
+
 ## [0.5.0] — 2026-10-26
 
 ### Fixed

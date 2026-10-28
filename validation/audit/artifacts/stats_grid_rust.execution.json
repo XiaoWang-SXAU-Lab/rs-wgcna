@@ -1,0 +1,8 @@
+{
+  "name": "stats_grid_rust",
+  "command": "mkdir -p validation/audit/artifacts/stats_grid && target/release/examples/audit_stats > validation/audit/artifacts/stats_grid/rust.tsv",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 0.8688881397247314,
+  "log": "artifacts/stats_grid_rust.log"
+}

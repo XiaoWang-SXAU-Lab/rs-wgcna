@@ -1,0 +1,8 @@
+{
+  "name": "matrix_final_failure_semantics",
+  "command": "python3 validation/audit/run_matrix.py --summarize-existing",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 1,
+  "seconds": 0.052160024642944336,
+  "log": "artifacts/matrix_final_failure_semantics.log"
+}

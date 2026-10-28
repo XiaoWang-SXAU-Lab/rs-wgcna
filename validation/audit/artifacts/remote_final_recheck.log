@@ -1,0 +1,1 @@
+{"command": ["git", "-c", "http.version=HTTP/1.1", "ls-remote", "origin", "HEAD", "refs/heads/master"], "status": "SKIPPED", "reason": "20-second network timeout; successful start-of-audit remote proof retained"}

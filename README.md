@@ -7,11 +7,11 @@
 [![中文](https://img.shields.io/badge/中文-README.zh--CN-red.svg)](README.zh-CN.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/Rust-1.99%2B-orange.svg)](https://www.rust-lang.org)
-[![Parity](https://img.shields.io/badge/Parity-R%20WGCNA-~100%25-brightgreen.svg)](#verification)
+[![Parity](https://img.shields.io/badge/Validation-52%20configs%20PASS-brightgreen.svg)](#verification)
 [![Zero-config](https://img.shields.io/badge/BLAS-zero--config-lightgrey.svg)](#why-rewrite)
 [![linalg](https://img.shields.io/badge/linalg-faer-blueviolet.svg)](https://docs.rs/faer)
 
-> Free WGCNA from R's performance and memory bottlenecks — zero BLAS configuration, numerically equivalent to the R package.
+> WGCNA computation in pure Rust, with no system BLAS configuration and reproducible comparisons against R WGCNA.
 
 ---
 
@@ -28,7 +28,7 @@
 | Hierarchical clustering (UPGMA) + dynamic tree cut | `hclust`, `cutree` |
 | Module eigengenes + `mergeCloseModules` | `eigengene`, `merge` |
 | Module–trait association + kME/GS | `module_trait`, `kme` |
-| End-to-end module detection (single-block `blockwiseModules` equivalent) | `pipeline` |
+| End-to-end module detection (single-block module workflow) | `pipeline` |
 
 Linear algebra is powered by [`faer`](https://docs.rs/faer) (pure Rust, SIMD + multithreading), with **no dependence on any system BLAS**.
 
@@ -36,22 +36,21 @@ Linear algebra is powered by [`faer`](https://docs.rs/faer) (pure Rust, SIMD + m
 
 ## Why rewrite
 
-It addresses three core pain points of the R WGCNA:
-
-1. **Slow matrix ops** — R ships with the reference BLAS (single-threaded, no SIMD). Most users never switch to OpenBLAS/MKL, making `cor` and `TOM` extremely slow.
-2. **Zero configuration** — `faer` is pure Rust; the optimization is baked into the binary. Users install/configure nothing.
-3. **Memory limits** — R forces users to hand-tune `maxBlockSize` to work around O(G²) memory. rs-WGCNA removes this via f32 and out-of-core computation (see [Roadmap](#roadmap)).
+1. **No system BLAS setup** — SIMD and parallel linear algebra are provided by `faer`.
+2. **Rust integration** — a typed library and worker expose the core single-block workflow.
+3. **Explicit resource limits** — current dense network calculations use O(G²) memory.
+   Single precision and out-of-core TOM remain [planned features](#roadmap).
 
 ---
 
 ## How it was reconstructed
 
-The guiding principle is **faithful porting** — not reinventing the algorithms, but translating WGCNA's original source line-by-line to guarantee bit-level numerical equivalence.
+The implementation follows the reference WGCNA algorithms. Numerical agreement is assessed with explicit tolerances and identifier checks; tested coverage is listed below.
 
 | Module | Ported from | Key detail |
 |---|---|---|
 | `tom` | WGCNA C source `src/networkFunctions.c` | Includes the hidden `UnsignedKeepSign` adjacency used when `networkType=unsigned` + `TOMType=signed`; all 6 TOM types |
-| `hclust` | R Fortran `src/library/stats/src/hclust.f` (Murtagh algorithm) | Strict `<`/`>` tie-breaking; `merge`/`height`/`order` identical to R |
+| `hclust` | R Fortran `src/library/stats/src/hclust.f` (Murtagh algorithm) | Average linkage with reference tie-breaking and tested merge/height agreement |
 | `cutree` | `dynamicTreeCut:::cutreeHybrid` (690-line R) | Core-scatter/gap criteria and PAM stage |
 | `sft` | `pickSoftThreshold` + `scaleFreeFitIndex` | R 4.5 `cut()` break semantics |
 | `eigengene` | `moduleEigengenes` | Standardize + first right singular vector + "along average" sign alignment |
@@ -64,40 +63,46 @@ The guiding principle is **faithful porting** — not reinventing the algorithms
 
 The parity script [`scripts/run_parity.sh`](scripts/run_parity.sh) does everything in one shot: generate data → Rust (release) → R → element-wise comparison (tol = 1e-9).
 
+The default deterministic fixture has 150 genes × 40 samples. Its measured errors are:
+
 | Output | Max diff vs R |
 |---|---|
-| cor / adjacency / TOM / eigengene / kME / module–trait correlation | ~1e-15 (machine precision) |
-| Soft-threshold fit indices | 9.6e-14 |
-| Module–trait p-value | 1.6e-12 |
-| Final module colors (discrete labels) | **100%** at 8k genes, **99.99%** at 12k genes (1 boundary gene) |
+| cor / adjacency / TOM / eigengene / kME / module–trait correlation | ≤5e-15 on the default fixture |
+| Soft-threshold fit indices | 9.6e-14 on the default fixture |
+| Module–trait p-value | 1.6e-12 on the default fixture |
+| Student correlation p-values (252-point grid) | 2.31e-12 |
+| Final module colors (real-data diagnostics) | **100%** at both 8k and 12k genes; ARI = 1 |
 
-> Continuous values reach machine precision; discrete module labels may hit an occasional gene sitting exactly on a floating-point boundary at larger scale (inherent, not a logic bug).
+| Validation | Result |
+|---|---|
+| Rust tests | 22 PASS |
+| Network/module parameter configurations | 52 PASS |
+| Comparison-validator controls | 15 PASS |
+| Exported comparisons | 664 PASS |
+
+Continuous comparisons use an absolute tolerance of `1e-9`. Gene/sample IDs,
+non-finite values and required files are checked. Final labels and ARI cover all
+8,000/12,000 selected genes; large correlation/TOM comparisons use labelled row
+probes. Runtime and numerical agreement depend on the tested inputs and configuration.
+
+**Scientific audit, fixes and verification: OpenAI Codex (ChatGPT).**
+[English audit](validation/fixes/FIX_VERIFICATION.md) ·
+[中文审计](validation/fixes/FIX_VERIFICATION.zh-CN.md) ·
+[Machine-readable results](validation/README.md).
 
 ---
 
 ## Benchmark
 
-Real breast-cancer RNA-seq data (FPKM, 36,953 genes × 56 samples, 5 molecular subtypes; see [`Demo/`](Demo/)). Environment: **Apple M2, 8 cores**; R uses the default reference-BLAS.
+The included real-data fixture contains 36,953 genes × 56 samples, with MAD-selected
+8K/12K subsets. Benchmark results distinguish default reference BLAS from controlled
+Accelerate BLAS and record thread settings, timing boundaries and variation. Runtime
+ratios describe those environments; no universal or algorithm-only speedup is claimed.
 
-The full Quarto report is at [`report/benchmark.html`](report/benchmark.html) (source: [`report/benchmark.qmd`](report/benchmark.qmd)).
-
-### 8,000 genes (MAD top 8000)
-
-| Step | R (s) | rs-WGCNA (s) | Speedup |
-|---|---|---|---|
-| cor | 1.20 | 0.084 | **14×** |
-| TOM | 110.0 | 6.76 | **16×** |
-| module detection (total) | 116.7 | 11.5 | **10×** |
-| **end-to-end** | **~119** | **~11.6** | **~10×** |
-
-### 12,000 genes (MAD top 12000)
-
-| Step | R (s) | rs-WGCNA (s) | Speedup |
-|---|---|---|---|
-| cor | 2.59 | 0.17 | **15×** |
-| TOM | 398.6 | 21.0 | **19×** |
-| module detection (total) | 406.7 | 35.4 | **11.5×** |
-| **end-to-end** | **~410** | **~35.5** | **~11.5×** |
+See the [audit benchmark results](validation/audit/benchmark_summary.csv),
+[audit methodology](validation/audit/SCIENTIFIC_PARITY_AUDIT.md), and
+[data-driven Quarto report](report/benchmark-fixed.html)
+([source](report/benchmark.qmd)).
 
 ---
 
@@ -109,7 +114,7 @@ Add the git dependency to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-rs-wgcna = { git = "https://github.com/XiaoWang-SXAU-Lab/rs-wgcna", tag = "v0.1.0" }
+rs-wgcna = { git = "https://github.com/XiaoWang-SXAU-Lab/rs-wgcna", branch = "master" }
 ```
 
 ```rust
@@ -152,8 +157,9 @@ cargo build --release
 
 ```bash
 cargo build --release --example real_bench
-./target/release/examples/real_bench Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt bench_out/rust 8000
-Rscript scripts/real_bench.R Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt bench_out/r 8000
+OUT="$(mktemp -d)"
+./target/release/examples/real_bench Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt "$OUT/rust" 8000
+Rscript scripts/real_bench.R Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt "$OUT/r" 8000
 ```
 
 ---
@@ -162,7 +168,7 @@ Rscript scripts/real_bench.R Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt 
 
 ```
 rs_WGCNA/
-├── src/                 # core library (12 modules)
+├── src/                 # core library
 │   ├── correlation.rs   #   Pearson correlation
 │   ├── adjacency.rs     #   adjacency
 │   ├── tom.rs           #   topological overlap matrix
@@ -177,7 +183,8 @@ rs_WGCNA/
 ├── examples/            # benchmark & parity entry points
 ├── scripts/             # R reference & parity scripts
 ├── Demo/                # real demo data
-├── bench_out/           # benchmark outputs (used by the report)
+├── bench_out/           # historical benchmark evidence
+├── validation/          # bilingual audits, fixtures, summaries and selected evidence
 └── report/              # Quarto report
 ```
 
@@ -198,6 +205,7 @@ rs_WGCNA/
 
 - [**Shawn Wang**](https://github.com/ShawnWx2019) — design & implementation
 - [**DeepSeek**](https://github.com/deepseek-ai) — AI co-development
+- **OpenAI Codex (ChatGPT)** — scientific parity audit, numerical/input fixes, regression tests and bilingual audit reports
 
 ## License
 

@@ -1,0 +1,8 @@
+{
+  "name": "cargo_verified",
+  "command": "cargo test --workspace",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 101,
+  "seconds": 2.1795027256011963,
+  "log": "artifacts/cargo_verified.log"
+}

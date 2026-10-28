@@ -1,0 +1,51 @@
+Warning message:
+package ‘WGCNA’ was built under R version 4.5.2 
+             impl   stage            gene own_label best_label own_abs_kME
+r dynamic       r dynamic ENSG00000149541         1          5   0.5124264
+r cleanup       r cleanup ENSG00000149541         1          5   0.5124215
+rust dynamic rust dynamic ENSG00000149541         1          5   0.5124264
+rust cleanup rust cleanup ENSG00000149541         1          5   0.5124215
+             best_abs_kME        p_own       p_best        ratio threshold
+r dynamic       0.7201411 3.778069e-05 3.846097e-11 1.018006e-06     1e-06
+r cleanup       0.7211448 3.778869e-05 3.470344e-11 9.183553e-07     1e-06
+rust dynamic    0.7201411 3.778069e-05 3.846097e-11 1.018006e-06     1e-06
+rust cleanup    0.7211448 3.778869e-05 3.470344e-11 9.183553e-07     1e-06
+                  distance reassign
+r dynamic     1.800615e-08    FALSE
+r cleanup    -8.164469e-08     TRUE
+rust dynamic  1.800615e-08    FALSE
+rust cleanup -8.164469e-08     TRUE
+      reconstructed
+actual    0    1   10   11   12   13   14    2    3    4    5    6    7    8
+    0  2402    0    0    0    0    0    0    0    0    0    0    0    0    0
+    1     0 5459    0    0    0    0    0    0    0    0    0    0    0    0
+    10    0    0  100    0    0    0    0    0    0    0    0    0    0    0
+    11    0    0    0   68    0    0    0    0    0    0    0    0    0    0
+    12    0    0    0    0   63    0    0    0    0    0    0    0    0    0
+    13    0    0    0    0    0   38    0    0    0    0    0    0    0    0
+    14    0    0    0    0    0    0   35    0    0    0    0    0    0    0
+    2     0    0    0    0    0    0    0 1699    0    0    0    0    0    0
+    3     0    0    0    0    0    0    0    0  440    0    0    0    0    0
+    4     0    0    0    0    0    0    0    0    0  366    0    0    0    0
+    5     0    0    0    0    0    0    0    0    0    0  355    0    0    0
+    6     0    0    0    0    0    0    0    0    0    0    0  299    0    0
+    7     0    0    0    0    0    0    0    0    0    0    0    0  242    0
+    8     0    0    0    0    0    0    0    0    0    0    0    0    0  238
+    9     0    0    0    0    0    0    0    0    0    0    0    0    0    0
+      reconstructed
+actual    9
+    0     0
+    1     0
+    10    0
+    11    0
+    12    0
+    13    0
+    14    0
+    2     0
+    3     0
+    4     0
+    5     0
+    6     0
+    7     0
+    8     0
+    9   196

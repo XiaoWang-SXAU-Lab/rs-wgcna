@@ -212,11 +212,71 @@ fn read_expression_text(path: &str) -> Result<ExpData> {
 
 /// Read a trait table from text (TSV/CSV) or Excel (xlsx/xls/xlsb/ods).
 pub fn read_trait(path: &str) -> Result<(Vec<String>, Vec<String>, Mat<f64>)> {
-    if is_excel(path) {
+    let result = if is_excel(path) {
         read_trait_excel(path)
     } else {
         read_trait_text(path)
+    }?;
+    validate_identifiers(&result.0, "trait sample")?;
+    validate_identifiers(&result.1, "trait column")?;
+    Ok(result)
+}
+
+fn validate_identifiers(ids: &[String], kind: &str) -> Result<()> {
+    let mut seen = std::collections::HashSet::new();
+    if ids.is_empty() {
+        return Err(WgcnaError::InvalidInput(format!("no {kind} IDs")));
     }
+    for id in ids {
+        if id.trim().is_empty() || !seen.insert(id) {
+            return Err(WgcnaError::InvalidInput(format!(
+                "empty or duplicate {kind} ID: '{id}'"
+            )));
+        }
+    }
+    Ok(())
+}
+
+/// Align trait rows to expression sample IDs, rejecting ambiguous or unequal
+/// sample sets. Matrix-only numerical APIs still require pre-aligned rows.
+pub fn align_trait_samples(
+    data: &Mat<f64>,
+    trait_samples: &[String],
+    expression_samples: &[String],
+) -> Result<Mat<f64>> {
+    validate_identifiers(trait_samples, "trait sample")?;
+    validate_identifiers(expression_samples, "expression sample")?;
+    if data.nrows() != trait_samples.len() || trait_samples.len() != expression_samples.len() {
+        return Err(WgcnaError::InvalidInput(
+            "trait/expression sample dimensions differ".into(),
+        ));
+    }
+    let index: std::collections::HashMap<&str, usize> = trait_samples
+        .iter()
+        .enumerate()
+        .map(|(i, s)| (s.as_str(), i))
+        .collect();
+    let order: Vec<usize> = expression_samples
+        .iter()
+        .map(|s| {
+            index.get(s.as_str()).copied().ok_or_else(|| {
+                WgcnaError::InvalidInput(format!("missing trait sample '{s}'"))
+            })
+        })
+        .collect::<Result<_>>()?;
+    Ok(Mat::from_fn(order.len(), data.ncols(), |i, j| {
+        data[(order[i], j)]
+    }))
+}
+
+/// Read traits and align them by sample identity rather than file order.
+pub fn read_trait_aligned(
+    path: &str,
+    expression_samples: &[String],
+) -> Result<(Vec<String>, Mat<f64>)> {
+    let (samples, traits, data) = read_trait(path)?;
+    let aligned = align_trait_samples(&data, &samples, expression_samples)?;
+    Ok((traits, aligned))
 }
 
 /// Read the first sheet of an Excel workbook as a trait table.
@@ -239,6 +299,11 @@ fn read_trait_excel(path: &str) -> Result<(Vec<String>, Vec<String>, Mat<f64>)> 
     for row in rows {
         if row.is_empty() {
             continue;
+        }
+        if row.len() != traits.len() + 1 {
+            return Err(WgcnaError::InvalidInput(
+                "trait row width differs from header".into(),
+            ));
         }
         samples.push(cell_to_string(&row[0]));
         let mut vals = Vec::with_capacity(traits.len());
@@ -280,6 +345,11 @@ fn read_trait_text(path: &str) -> Result<(Vec<String>, Vec<String>, Mat<f64>)> {
     let mut rows: Vec<Vec<f64>> = Vec::new();
     for rec in rdr.records() {
         let rec = rec?;
+        if rec.len() != traits.len() + 1 {
+            return Err(WgcnaError::InvalidInput(
+                "trait row width differs from header".into(),
+            ));
+        }
         samples.push(rec.get(0).unwrap_or("").to_string());
         let mut vals = Vec::with_capacity(traits.len());
         for (i, field) in rec.iter().enumerate().skip(1) {

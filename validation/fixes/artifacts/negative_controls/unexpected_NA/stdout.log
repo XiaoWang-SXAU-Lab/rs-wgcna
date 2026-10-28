@@ -1,0 +1,41 @@
+               metric status
+              cor.tsv   FAIL
+        adjacency.tsv   PASS
+              tom.tsv   PASS
+              sft.tsv   PASS
+       eigengenes.tsv   PASS
+              kme.tsv   PASS
+ module_trait_cor.tsv   PASS
+   module_trait_p.tsv   PASS
+    module_colors.tsv   FAIL
+                                                                                                                              reason
+ unexpected NA/NaN/Inf: /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/fixes/artifacts/negative_controls/unexpected_NA/cor.tsv
+                                                                                                                                    
+                                                                                                                                    
+                                                                                                                                    
+                                                                                                                                    
+                                                                                                                                    
+                                                                                                                                    
+                                                                                                                                    
+ unexpected NA/NaN/Inf: /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/fixes/artifacts/negative_controls/unexpected_NA/cor.tsv
+ total      max_abs     mean_abs         rmse max_relative above_tolerance
+    NA           NA           NA           NA           NA              NA
+ 22500 4.996004e-15 1.854101e-16 5.297704e-16 4.998537e-06               0
+ 22500 2.220446e-15 1.021981e-16 2.881350e-16 2.126490e-09               0
+    90 9.592327e-14 1.432942e-14 2.513786e-14 4.114104e-14               0
+   200 3.181483e-15 7.533758e-16 1.036374e-15 1.750808e-12               0
+   750 4.052314e-15 7.610288e-16 9.868498e-16 3.464290e-12               0
+    10 1.942890e-15 1.085243e-15 1.272072e-15 5.774949e-14               0
+    10 1.593947e-12 7.253847e-13 9.374880e-13 4.355938e-11               0
+    NA           NA           NA           NA           NA              NA
+ proportion_above tolerance
+               NA     1e-09
+                0     1e-09
+                0     1e-09
+                0     1e-09
+                0     1e-09
+                0     1e-09
+                0     1e-09
+                0     1e-09
+               NA     1e-09
+RESULT: FAIL 

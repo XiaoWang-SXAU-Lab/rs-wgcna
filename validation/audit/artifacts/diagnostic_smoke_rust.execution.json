@@ -1,0 +1,8 @@
+{
+  "name": "diagnostic_smoke_rust",
+  "command": "target/release/examples/audit_real Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_smoke/rust 150",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 1.2984111309051514,
+  "log": "artifacts/diagnostic_smoke_rust.log"
+}

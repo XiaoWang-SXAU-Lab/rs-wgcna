@@ -1,0 +1,15 @@
+# Generated reports and verbatim scientific evidence remain available for review.
+# Preserve archived whitespace instead of rewriting recorded outputs.
+report/*.html linguist-generated=true whitespace=-blank-at-eol,-blank-at-eof
+validation/**/artifacts/** linguist-generated=true whitespace=-blank-at-eol,-blank-at-eof
+validation/**/*.patch linguist-generated=true whitespace=-blank-at-eol,-blank-at-eof
+validation/**/*.csv linguist-generated=true
+validation/**/*.tsv linguist-generated=true
+validation/**/test_manifest.json linguist-generated=true
+validation/PUBLISHED_EVIDENCE.json linguist-generated=true
+# CSV writers use CRLF; retain recorded bytes and accept carriage returns.
+validation/**/*.csv -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+validation/**/*.tsv -text whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
+validation/**/*.json -text
+validation/**/artifacts/** -text
+validation/**/test_execution_log.txt -text whitespace=-blank-at-eol,-blank-at-eof

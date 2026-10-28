@@ -1,0 +1,8 @@
+{
+  "name": "perfB_12000_r_3",
+  "command": "R_HOME=/Library/Frameworks/R.framework/Resources DYLD_LIBRARY_PATH=/Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/accelerate_blas VECLIB_MAXIMUM_THREADS=8 ALLOW_WGCNA_THREADS=8 /Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_3 12000",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 31.85688090324402,
+  "log": "artifacts/perfB_12000_r_3.log"
+}

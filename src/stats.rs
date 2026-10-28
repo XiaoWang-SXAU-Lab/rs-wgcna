@@ -38,8 +38,19 @@ fn betai(a: f64, b: f64, x: f64) -> f64 {
     }
     let bt = (ln_gamma(a + b) - ln_gamma(a) - ln_gamma(b)
         + a * x.ln()
-        + b * (1.0 - x).ln())
+        + b * (-x).ln_1p())
     .exp();
+    // Use the complementary continued fraction where the direct expansion
+    // would converge slowly (notably correlation p-values close to one).
+    let result = if x < (a + 1.0) / (a + b + 2.0) {
+        bt * betacf(a, b, x) / a
+    } else {
+        1.0 - bt * betacf(b, a, 1.0 - x) / b
+    };
+    result.clamp(0.0, 1.0)
+}
+
+fn betacf(a: f64, b: f64, x: f64) -> f64 {
     // Continued fraction (Numerical Recipes betacf).
     let fpmin = 1.0e-300;
     let qab = a + b;
@@ -52,8 +63,7 @@ fn betai(a: f64, b: f64, x: f64) -> f64 {
     }
     d = 1.0 / d;
     let mut h = d;
-    let mut m2: f64;
-    for m in 1..200 {
+    for m in 1..=10_000 {
         let m = m as f64;
         let m2 = 2.0 * m;
         let mut aa = m * (b - m) * x / ((qam + m2) * (a + m2));
@@ -80,11 +90,11 @@ fn betai(a: f64, b: f64, x: f64) -> f64 {
         let del = d * c;
         h *= del;
         if (del - 1.0).abs() < 1.0e-15 {
-            break;
+            return h;
         }
     }
-    let _ = m2;
-    bt * h / a
+    // Do not return an unconverged probability.
+    f64::NAN
 }
 
 /// Log-gamma via Lanczos approximation.
@@ -115,27 +125,20 @@ pub fn ln_gamma(x: f64) -> f64 {
 /// Two-sided p-value of a Pearson correlation with `n` samples, matching
 /// R's `cor.test` / WGCNA `corPvalueStudent`.
 pub fn cor_pvalue(r: f64, n: usize) -> f64 {
-    if n <= 2 || !r.is_finite() || r.abs() >= 1.0 {
-        // Degenerate cases; match R behavior closely enough for parity tests.
-        if r.abs() >= 1.0 {
-            return 0.0;
-        }
+    if n <= 2 || !r.is_finite() || r.abs() > 1.0 {
         return f64::NAN;
     }
+    if r.abs() == 1.0 {
+        return 0.0;
+    }
     let df = (n - 2) as f64;
-    let t = r * (df / (1.0 - r * r)).sqrt();
-    // two-sided: 2 * P(T <= -|t|)
-    2.0 * student_t_cdf(-t.abs(), df)
-}
-
-/// Student's t cumulative distribution function.
-fn student_t_cdf(t: f64, df: f64) -> f64 {
-    let x = df / (df + t * t);
-    let ib = betai(df / 2.0, 0.5, x);
-    if t < 0.0 {
-        0.5 * ib
+    let r2 = r * r;
+    // Avoid losing tiny r^2 in 1-r^2. Near zero evaluate the complementary
+    // beta probability with r^2 directly; near one evaluate its small tail.
+    if r2 < 0.5 {
+        1.0 - betai(0.5, df / 2.0, r2)
     } else {
-        1.0 - 0.5 * ib
+        betai(df / 2.0, 0.5, (1.0 - r.abs()) * (1.0 + r.abs()))
     }
 }
 
@@ -207,6 +210,14 @@ fn erfc(x: f64) -> f64 {
 
 /// Standard normal CDF (R's `pnorm`), full double precision.
 pub fn normal_cdf(x: f64) -> f64 {
+    // Perfect correlations produce an infinite Fisher z statistic. Handle
+    // its exact limiting probability before the incomplete-gamma expansion.
+    if x == f64::NEG_INFINITY {
+        return 0.0;
+    }
+    if x == f64::INFINITY {
+        return 1.0;
+    }
     let y = x / std::f64::consts::SQRT_2;
     if y >= 0.0 {
         1.0 - 0.5 * erfc(y)

@@ -20,7 +20,7 @@ use rs_wgcna::filter::{
     low_expression_mask, normalize, top_genes_by, FilterMethod, NormalizeMethod,
 };
 use rs_wgcna::hclust::{hclust_average, HClust};
-use rs_wgcna::io::{read_expression, read_trait, write_expression};
+use rs_wgcna::io::{read_expression, read_trait_aligned, write_expression};
 use rs_wgcna::kme::kme;
 use rs_wgcna::module_trait::module_trait_cor;
 use rs_wgcna::network::{NetworkType, TomDenom, TomType};
@@ -743,8 +743,9 @@ fn read_trait_with_source(
         )
         .expect("read sample_info.tsv")
     } else {
-        let (_samples, traits, tdata) =
-            read_trait(job_dir.join("trait.tsv").to_str().unwrap()).expect("read trait.tsv");
+        let (traits, tdata) = read_trait_aligned(
+            job_dir.join("trait.tsv").to_str().unwrap(), &exp.samples,
+        ).expect("read aligned trait.tsv");
         (traits, tdata)
     }
 }

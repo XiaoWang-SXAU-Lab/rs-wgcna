@@ -1,0 +1,4 @@
+"metric","status","total","max_abs","mean_abs","rmse","max_relative","above_tolerance","proportion_above","tolerance"
+"tree.tsv","FAIL",447,238,32.1726144299119,65.245501211366,35.5,401,0.897091722595078,1e-09
+"dynamic.tsv","PASS",150,0,0,0,0,0,0,1e-09
+"connectivity.tsv","FAIL",150,4.88082070423117,3.01496805054832,3.1028589169507,0.191636240845137,150,1,1e-09

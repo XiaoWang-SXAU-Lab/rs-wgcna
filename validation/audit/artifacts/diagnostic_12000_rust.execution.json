@@ -1,0 +1,8 @@
+{
+  "name": "diagnostic_12000_rust",
+  "command": "target/release/examples/audit_real Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_12000_rust 12000",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 108.60802268981934,
+  "log": "artifacts/diagnostic_12000_rust.log"
+}

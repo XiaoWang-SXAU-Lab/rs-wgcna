@@ -1,0 +1,35 @@
+
+
+processing file: benchmark.qmd
+1/11                  
+2/11 [setup]          
+3/11                  
+4/11 [unnamed-chunk-1]
+5/11                  
+6/11 [unnamed-chunk-2]
+7/11                  
+8/11 [unnamed-chunk-3]
+9/11                  
+10/11 [unnamed-chunk-4]
+11/11                  
+output file: benchmark.knit.md
+
+pandoc --output benchmark-audit.html
+  to: html
+  standalone: true
+  embed-resources: true
+  section-divs: true
+  html-math-method: mathjax
+  wrap: none
+  default-image-extension: png
+  
+metadata
+  document-css: false
+  link-citations: true
+  date-format: long
+  lang: zh
+  title: rs-WGCNA / R WGCNA 科学一致性审计
+  subtitle: 由 validation/audit 生成的结果；历史报告单独保留
+  
+Output created: benchmark-audit.html
+

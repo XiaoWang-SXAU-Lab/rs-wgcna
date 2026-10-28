@@ -1,0 +1,12 @@
+                           metric status total      max_abs     mean_abs
+tree.tsv                 tree.tsv   FAIL   447 7.100000e+01 3.176741e-01
+dynamic.tsv           dynamic.tsv   PASS   150 0.000000e+00 0.000000e+00
+connectivity.tsv connectivity.tsv   PASS   150 7.105427e-14 2.861119e-14
+                         rmse max_relative above_tolerance proportion_above
+tree.tsv         4.749190e+00 9.594595e-01               5       0.01118568
+dynamic.tsv      0.000000e+00 0.000000e+00               0       0.00000000
+connectivity.tsv 3.416644e-14 4.925045e-15               0       0.00000000
+                 tolerance
+tree.tsv             1e-09
+dynamic.tsv          1e-09
+connectivity.tsv     1e-09

@@ -1,0 +1,66 @@
+{
+  "status": "PASS",
+  "method": "Clean index export without local symlinks or raw-matrix dependencies",
+  "checks": [
+    {
+      "argv": [
+        "python3",
+        "validation/fixes/run_validation.py",
+        "--help"
+      ],
+      "exit_code": 0,
+      "seconds": 0.0419919490814209
+    },
+    {
+      "argv": [
+        "Rscript",
+        "scripts/compare.R",
+        "validation/audit/artifacts/baseline/rust_out",
+        "validation/audit/artifacts/baseline/r_out",
+        "1e-9",
+        "/var/folders/n1/5qx_z2n53jg9jr9rypfb1wjw0000gn/T/rswgcna-publish-review-42vlr_rt/review-comparison",
+        "validation/audit/artifacts/baseline/testdata/expr.tsv"
+      ],
+      "exit_code": 0,
+      "seconds": 0.42015981674194336
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "log": "fixes/artifacts/publication_cargo.log"
+    },
+    {
+      "argv": [
+        "quarto",
+        "render",
+        "benchmark.qmd",
+        "--output",
+        "benchmark-fixed.html"
+      ],
+      "exit_code": 0,
+      "log": "fixes/artifacts/publication_quarto.log"
+    },
+    {
+      "check": "all staged source and fixture hashes match the tested source manifest",
+      "status": "PASS"
+    },
+    {
+      "check": "no build targets, local symlinks, credential patterns or files larger than 5 MB in publication",
+      "status": "PASS"
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--cached",
+        "--check"
+      ],
+      "exit_code": 0,
+      "note": "Generated/archived output whitespace is preserved by .gitattributes; source whitespace checks remain enabled."
+    }
+  ]
+}

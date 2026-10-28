@@ -1,0 +1,7 @@
+"genes","stage","total","exact_agreement","ARI","disagreeing","status"
+8000,"dynamic",8000,1,1,0,"PASS"
+8000,"cleanup",8000,1,1,0,"PASS"
+8000,"actual_R_cut_vs_reconstructed",8000,1,1,0,"PASS"
+12000,"dynamic",12000,1,1,0,"PASS"
+12000,"cleanup",12000,1,1,0,"PASS"
+12000,"actual_R_cut_vs_reconstructed",12000,1,1,0,"PASS"

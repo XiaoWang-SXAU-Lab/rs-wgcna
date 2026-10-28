@@ -1,0 +1,28 @@
+Warning message:
+package ‘WGCNA’ was built under R version 4.5.2 
+TOM calculation: adjacency..
+..will not use multithreading.
+ Fraction of slow calculations: 0.000000
+..connectivity..
+..matrix multiplication (system BLAS)..
+..normalization..
+..done.
+   Power SFT.R.sq   slope truncated.R.sq mean.k. median.k. max.k.
+1      1 7.91e-01  2.4000         0.8480   41.50     44.10   52.5
+2      2 1.85e-03 -0.4210        -0.0204   25.40     27.90   31.7
+3      3 5.64e-05  0.0632         0.1440   20.50     22.90   26.6
+4      4 1.96e-02  1.1300         0.5560   18.10     20.00   24.5
+5      5 9.87e-03  0.6230         0.2980   16.30     17.90   23.0
+6      6 2.39e-02  0.7270         0.3840   14.90     16.00   21.8
+7      7 2.13e-02  0.4580         0.1910   13.60     14.50   20.8
+8      8 1.34e-02  0.3280         0.1720   12.50     13.20   19.8
+9      9 1.03e-02  0.2650         0.1250   11.50     11.90   18.9
+10    10 7.55e-03  0.2100         0.0893   10.50     10.90   18.0
+11    12 3.44e-02  0.0491        -0.0437    8.92      8.96   16.4
+12    14 1.93e-02  0.0303        -0.2430    7.57      7.41   14.9
+13    16 1.89e-02  0.0195        -0.1440    6.45      6.14   13.6
+14    18 1.05e-02 -0.0319         0.4330    5.51      5.10   12.4
+15    20 8.37e-02 -0.1270         0.4820    4.72      4.24   11.3
+Warning message:
+executing %dopar% sequentially: no parallel backend registered 
+wrote reference outputs to /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/matrix_040/r 

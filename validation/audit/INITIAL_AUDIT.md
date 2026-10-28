@@ -1,0 +1,10 @@
+# Initial infrastructure audit (before validation changes)
+Source: 4f5055425ec9999dfe7b15422d24b5bb72cb1f7e; remote HEAD/master identical on 2026-10-28. Initially clean tracked worktree.
+
+- scripts/gen_testdata.R: deterministic seed 42/7; 150 genes, 40 samples, five assigned fixture modules.
+- src/main.rs and scripts/r_reference.R export correlation, adjacency, TOM, SFT, eigengenes, kME, module-trait r/p, final colors. Default unsigned/signed TOM/min/power 6/deepSplit 2/merge 0.15.
+- scripts/compare.R: missing continuous files SKIP without failure; missing colors silently ignored; dimensions only, no ID validation/alignment; max/sum use na.rm; absolute tolerance 1e-9 only; no ARI/contingency. Failure exit 1 only for detected differences. SFT uses power as row ID; differing column spellings are positional.
+- scripts/run_parity.sh: set -euo pipefail, hard-coded cargo path; overwrites testdata/r_out/rust_out. Baseline will execute an exact copied script with ROOT redirected into a fresh audit artifact directory and symlinked src/Cargo/target; existing outputs preserved.
+- scripts/real_bench.R / examples/real_bench.rs: Demo FPKM, log10(x+1), MAD top 8K/12K, power 6, unsigned/signed/min, min size 30, merge .25, deepSplit 2. Export selected gene IDs, final colors, module-trait r/p, timings, sizes only. No intermediate clustering/cut/merge/reassignment evidence. Rust trait IDs discarded, positional contract; R aligns by names. Rust module-trait output rounded to six decimals and excludes grey; R includes grey. Cannot apply 1e-9 continuous tolerance to these artifacts.
+- report/benchmark.qmd: dynamic cut 100% hardcoded without artifact; final colors compared positionally; fixed module count/conclusion and timing claims. Historical bench_out has no source/environment provenance.
+- No separate integration-test directory. Rust inline unit tests exist. Supported enums: three network types, seven TOM types including none, two denominators; actual implementation will be inspected before coverage.

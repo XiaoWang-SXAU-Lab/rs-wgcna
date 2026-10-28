@@ -1,0 +1,8 @@
+{
+  "name": "diagnostic_8000_rust",
+  "command": "target/release/examples/audit_real Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_8000_rust 8000",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 38.602778911590576,
+  "log": "artifacts/diagnostic_8000_rust.log"
+}

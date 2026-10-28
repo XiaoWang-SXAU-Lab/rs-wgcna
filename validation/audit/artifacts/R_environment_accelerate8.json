@@ -1,0 +1,18 @@
+{
+  "R": "R version 4.5.1 (2025-06-13)",
+  "WGCNA": "1.74",
+  "dynamicTreeCut": "1.63.1",
+  "fastcluster": "1.3.0",
+  "BLAS": "/System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/libBLAS.dylib",
+  "LAPACK": "/Library/Frameworks/R.framework/Versions/4.5-arm64/Resources/lib/libRlapack.dylib",
+  "R_platform": "aarch64-apple-darwin20",
+  "logical_cores": 8,
+  "WGCNA_threads": 8,
+  "environment": {
+    "ALLOW_WGCNA_THREADS": "8",
+    "RAYON_NUM_THREADS": "",
+    "OMP_NUM_THREADS": "",
+    "OPENBLAS_NUM_THREADS": "",
+    "VECLIB_MAXIMUM_THREADS": "8"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "note": "1 second ps RSS samples; lower-bound observations, not exact process peak; monitoring started after first Rust repeat",
+  "processes": [
+    {
+      "pid": 41636,
+      "command": "/Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_r_3 8000",
+      "max_sampled_rss_bytes": 3326689280,
+      "samples": 11
+    },
+    {
+      "pid": 41727,
+      "command": "target/release/examples/audit_perf Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_rust_1 12000",
+      "max_sampled_rss_bytes": 4883185664,
+      "samples": 55
+    },
+    {
+      "pid": 42096,
+      "command": "/Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_1 12000",
+      "max_sampled_rss_bytes": 5391876096,
+      "samples": 27
+    },
+    {
+      "pid": 42301,
+      "command": "target/release/examples/audit_perf Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_rust_2 12000",
+      "max_sampled_rss_bytes": 4883202048,
+      "samples": 50
+    },
+    {
+      "pid": 42619,
+      "command": "/Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_2 12000",
+      "max_sampled_rss_bytes": 5369937920,
+      "samples": 30
+    },
+    {
+      "pid": 42800,
+      "command": "target/release/examples/audit_perf Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_rust_3 12000",
+      "max_sampled_rss_bytes": 4881383424,
+      "samples": 51
+    },
+    {
+      "pid": 43126,
+      "command": "/Library/Frameworks/R.framework/Resources/bin/exec/R --no-save --no-restore --slave -f scripts/real_bench.R --args Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_12000_r_3 12000",
+      "max_sampled_rss_bytes": 4804198400,
+      "samples": 30
+    }
+  ]
+}

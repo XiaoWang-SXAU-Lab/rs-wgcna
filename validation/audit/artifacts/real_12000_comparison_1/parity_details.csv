@@ -1,0 +1,11 @@
+"metric","status","reason","total","max_abs","mean_abs","rmse","max_relative","above_tolerance","proportion_above","tolerance"
+"module_trait_cor.tsv","FAIL","R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate",55,0.0012630013620156,6.68003424287852e-05,0.000238246504181824,0.667012672238941,55,1,1e-09
+"module_trait_p.tsv","FAIL","R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate",55,0.846203629337726,0.0156022229178692,0.114107105961336,1,51,0.927272727272727,1e-09
+"cor_probe.tsv","NOT EXECUTED","required diagnostic file missing or not exported by original benchmark",NA,NA,NA,NA,NA,NA,NA,1e-09
+"tom_probe.tsv","NOT EXECUTED","required diagnostic file missing or not exported by original benchmark",NA,NA,NA,NA,NA,NA,NA,1e-09
+"sft.tsv","NOT EXECUTED","required diagnostic file missing or not exported by original benchmark",NA,NA,NA,NA,NA,NA,NA,1e-09
+"tree.tsv","NOT EXECUTED","required diagnostic file missing or not exported by original benchmark",NA,NA,NA,NA,NA,NA,NA,1e-09
+"dynamic.tsv","NOT EXECUTED","required diagnostic file missing or not exported by original benchmark",NA,NA,NA,NA,NA,NA,NA,1e-09
+"eigengenes.tsv","NOT EXECUTED","required diagnostic file missing or not exported by original benchmark",NA,NA,NA,NA,NA,NA,NA,1e-09
+"kme.tsv","NOT EXECUTED","required diagnostic file missing or not exported by original benchmark",NA,NA,NA,NA,NA,NA,NA,1e-09
+"intramodular.tsv","NOT EXECUTED","required diagnostic file missing or not exported by original benchmark",NA,NA,NA,NA,NA,NA,NA,1e-09

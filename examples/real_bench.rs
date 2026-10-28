@@ -7,7 +7,7 @@ use faer::Mat;
 use rs_wgcna::correlation::pearson;
 use rs_wgcna::eigengene::module_eigengene;
 use rs_wgcna::filter::{normalize, top_genes_by, FilterMethod, NormalizeMethod};
-use rs_wgcna::io::{read_expression, read_trait};
+use rs_wgcna::io::{read_expression, read_trait_aligned};
 use rs_wgcna::module_trait::module_trait_cor;
 use rs_wgcna::network::{NetworkType, TomDenom, TomType};
 use rs_wgcna::pipeline::blockwise_modules_single;
@@ -81,9 +81,7 @@ fn main() {
 
     // 6. module eigengenes + module-trait
     let t = Instant::now();
-    let trait_data = read_trait(traitpath).unwrap();
-    let traits = trait_data.1;
-    let tdata = trait_data.2;
+    let (traits, tdata) = read_trait_aligned(traitpath, &exp.samples).expect("read aligned traits");
     // final module order (alphabetical non-grey)
     let mut mods: Vec<String> = colors.iter().cloned().collect();
     mods.sort();
@@ -157,7 +155,7 @@ fn write_mat(path: &str, m: &Mat<f64>, rows: &[String], cols: &[String]) {
     for i in 0..m.nrows() {
         write!(f, "{}", rows[i]).unwrap();
         for j in 0..m.ncols() {
-            write!(f, "\t{:.6}", m[(i, j)]).unwrap();
+            write!(f, "\t{:.17}", m[(i, j)]).unwrap();
         }
         writeln!(f).unwrap();
     }

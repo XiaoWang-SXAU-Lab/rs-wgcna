@@ -1,0 +1,8 @@
+{
+  "name": "perfB_8000_compare_1",
+  "command": "Rscript validation/audit/compare_real.R /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_rust_1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_r_1 /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/perfB_8000_comparison_1",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 1,
+  "seconds": 0.18674707412719727,
+  "log": "artifacts/perfB_8000_compare_1.log"
+}

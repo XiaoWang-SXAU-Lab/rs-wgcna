@@ -1,0 +1,98 @@
+warning: variable does not need to be mutable
+   --> src/cutree.rs:193:17
+    |
+193 |             let mut do_merge: bool;
+    |                 ----^^^^^^^^
+    |                 |
+    |                 help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: variable does not need to be mutable
+   --> src/cutree.rs:194:17
+    |
+194 |             let mut smaller_fail_size: bool;
+    |                 ----^^^^^^^^^^^^^^^^^
+    |                 |
+    |                 help: remove this `mut`
+
+warning: variable `root_branch` is assigned to, but never used
+   --> src/cutree.rs:124:9
+    |
+124 |     let mut root_branch = 0usize;
+    |         ^^^^^^^^^^^^^^^
+    |
+    = note: consider using `_root_branch` instead
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `unlabeled_exist`
+   --> src/cutree.rs:488:9
+    |
+488 |     let unlabeled_exist = colors[1..].iter().any(|&c| c == 0);
+    |         ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_unlabeled_exist`
+
+warning: value assigned to `root_branch` is never read
+   --> src/cutree.rs:284:21
+    |
+268 |                     root_branch = n_branches;
+    |                     ------------------------ `root_branch` is overwritten here before the previous value is read
+...
+284 |                     root_branch = large;
+    |                     ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+    |
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `root_branch` is never read
+   --> src/cutree.rs:268:21
+    |
+242 |                 root_branch = large;
+    |                 ------------------- `root_branch` is overwritten here before the previous value is read
+...
+268 |                     root_branch = n_branches;
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+
+warning: value assigned to `root_branch` is never read
+   --> src/cutree.rs:242:17
+    |
+159 |             root_branch = clust;
+    |             ------------------- `root_branch` is overwritten here before the previous value is read
+...
+242 |                 root_branch = large;
+    |                 ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+
+warning: value assigned to `root_branch` is never read
+   --> src/cutree.rs:159:13
+    |
+139 |             root_branch = n_branches;
+    |             ------------------------ `root_branch` is overwritten here before the previous value is read
+...
+159 |             root_branch = clust;
+    |             ^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+
+warning: value assigned to `root_branch` is never read
+   --> src/cutree.rs:139:13
+    |
+139 |             root_branch = n_branches;
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: variable does not need to be mutable
+   --> src/pipeline.rs:150:13
+    |
+150 |         let mut kme: Vec<f64> = mod_genes
+    |             ----^^^
+    |             |
+    |             help: remove this `mut`
+
+warning: function `rank_first` is never used
+  --> src/cutree.rs:54:4
+   |
+54 | fn rank_first(x: &[f64]) -> Vec<usize> {
+   |    ^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `rs-wgcna` (lib) generated 11 warnings (run `cargo fix --lib -p rs-wgcna` to apply 4 suggestions)
+   Compiling rs-wgcna v0.5.0 (/Users/shawn/Sync-Document/wgcna/rs_WGCNA)
+    Finished `release` profile [optimized] target(s) in 1.49s

@@ -11,7 +11,7 @@ use faer::Mat;
 use rs_wgcna::adjacency::adjacency;
 use rs_wgcna::correlation::pearson;
 use rs_wgcna::eigengene::module_eigengene;
-use rs_wgcna::io::{read_expression, read_trait};
+use rs_wgcna::io::{read_expression, read_trait_aligned};
 use rs_wgcna::kme::kme;
 use rs_wgcna::module_trait::module_trait_cor;
 use rs_wgcna::network::{NetworkType, TomDenom, TomType};
@@ -59,7 +59,7 @@ fn read_lines(path: &str) -> Vec<String> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 3 {
+    if args.len() < 4 {
         eprintln!("usage: rs-wgcna <expression.tsv> <power> <outdir> [colors.txt] [trait.tsv]");
         std::process::exit(2);
     }
@@ -147,7 +147,7 @@ fn main() {
 
         // --- module-trait (require trait) ---
         if let Some(tp) = trait_path {
-            let (_samples, traits, tdata) = read_trait(tp).expect("read trait");
+            let (traits, tdata) = read_trait_aligned(tp, &exp.samples).expect("read aligned trait");
             let (cor, p) = module_trait_cor(&mes, &tdata);
             write_mat(&format!("{outdir}/module_trait_cor.tsv"), &cor, &mod_cols, &traits)
                 .expect("write mt cor");

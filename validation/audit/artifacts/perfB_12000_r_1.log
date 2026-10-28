@@ -1,0 +1,10 @@
+Warning message:
+package ‘WGCNA’ was built under R version 4.5.2 
+TOM calculation: adjacency..
+..will use 8 parallel threads.
+ Fraction of slow calculations: 0.000000
+..connectivity..
+..matrix multiplication (system BLAS)..
+..normalization..
+..done.
+R: modules = black,blue,brown,green,greenyellow,grey,magenta,pink,purple,red,turquoise,yellow 

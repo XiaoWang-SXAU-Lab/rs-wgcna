@@ -1,0 +1,8 @@
+{
+  "name": "unchanged_production",
+  "command": "git diff --exit-code -- src Cargo.toml Cargo.lock Demo bench_out report/benchmark.html",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 0.035253047943115234,
+  "log": "artifacts/unchanged_production.log"
+}

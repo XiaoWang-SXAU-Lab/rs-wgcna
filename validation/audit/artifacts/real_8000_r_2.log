@@ -1,0 +1,28 @@
+Warning message:
+package ‘WGCNA’ was built under R version 4.5.2 
+TOM calculation: adjacency..
+..will not use multithreading.
+ Fraction of slow calculations: 0.000000
+..connectivity..
+..matrix multiplication (system BLAS)..
+..normalization..
+..done.
+R: modules = blue,brown,green,grey,red,turquoise,yellow 
+      231.63 real       224.81 user         2.12 sys
+          2309259264  maximum resident set size
+                   0  average shared memory size
+                   0  average unshared data size
+                   0  average unshared stack size
+              616823  page reclaims
+                  27  page faults
+                   0  swaps
+                   0  block input operations
+                   0  block output operations
+                   0  messages sent
+                   0  messages received
+                   0  signals received
+                  15  voluntary context switches
+              127193  involuntary context switches
+       3725724502229  instructions retired
+        750594966442  cycles elapsed
+          2981350400  peak memory footprint

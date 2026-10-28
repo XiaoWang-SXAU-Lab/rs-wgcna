@@ -1,0 +1,8 @@
+{
+  "name": "diagnostic_smoke_r",
+  "command": "Rscript scripts/audit_real_reference.R Demo/WGCNA_fpkm_data.txt Demo/WGCNA_data_trait.txt /Users/shawn/Sync-Document/wgcna/rs_WGCNA/validation/audit/artifacts/diagnostic_smoke/r 150",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 15.200321674346924,
+  "log": "artifacts/diagnostic_smoke_r.log"
+}

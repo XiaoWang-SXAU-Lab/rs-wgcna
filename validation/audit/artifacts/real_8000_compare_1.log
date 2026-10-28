@@ -1,0 +1,46 @@
+  total exact_agreement disagreeing ARI gene_order_identical status
+1  8000               1           0   1                 TRUE   PASS
+                                   metric       status
+module_trait_cor.tsv module_trait_cor.tsv         FAIL
+module_trait_p.tsv     module_trait_p.tsv         FAIL
+cor_probe.tsv               cor_probe.tsv NOT EXECUTED
+tom_probe.tsv               tom_probe.tsv NOT EXECUTED
+sft.tsv                           sft.tsv NOT EXECUTED
+tree.tsv                         tree.tsv NOT EXECUTED
+dynamic.tsv                   dynamic.tsv NOT EXECUTED
+eigengenes.tsv             eigengenes.tsv NOT EXECUTED
+kme.tsv                           kme.tsv NOT EXECUTED
+intramodular.tsv         intramodular.tsv NOT EXECUTED
+                                                                                                                       reason
+module_trait_cor.tsv R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate
+module_trait_p.tsv   R grey excluded explicitly: Rust benchmark exports non-grey only; final-module differences may propagate
+cor_probe.tsv                                          required diagnostic file missing or not exported by original benchmark
+tom_probe.tsv                                          required diagnostic file missing or not exported by original benchmark
+sft.tsv                                                required diagnostic file missing or not exported by original benchmark
+tree.tsv                                               required diagnostic file missing or not exported by original benchmark
+dynamic.tsv                                            required diagnostic file missing or not exported by original benchmark
+eigengenes.tsv                                         required diagnostic file missing or not exported by original benchmark
+kme.tsv                                                required diagnostic file missing or not exported by original benchmark
+intramodular.tsv                                       required diagnostic file missing or not exported by original benchmark
+                     total      max_abs     mean_abs         rmse max_relative
+module_trait_cor.tsv    30 4.798394e-07 1.926649e-07 2.331300e-07 1.052862e-05
+module_trait_p.tsv      30 4.632204e-07 1.947951e-07 2.419163e-07 1.000000e+00
+cor_probe.tsv           NA           NA           NA           NA           NA
+tom_probe.tsv           NA           NA           NA           NA           NA
+sft.tsv                 NA           NA           NA           NA           NA
+tree.tsv                NA           NA           NA           NA           NA
+dynamic.tsv             NA           NA           NA           NA           NA
+eigengenes.tsv          NA           NA           NA           NA           NA
+kme.tsv                 NA           NA           NA           NA           NA
+intramodular.tsv        NA           NA           NA           NA           NA
+                     above_tolerance proportion_above tolerance
+module_trait_cor.tsv              30        1.0000000     1e-09
+module_trait_p.tsv                29        0.9666667     1e-09
+cor_probe.tsv                     NA               NA     1e-09
+tom_probe.tsv                     NA               NA     1e-09
+sft.tsv                           NA               NA     1e-09
+tree.tsv                          NA               NA     1e-09
+dynamic.tsv                       NA               NA     1e-09
+eigengenes.tsv                    NA               NA     1e-09
+kme.tsv                           NA               NA     1e-09
+intramodular.tsv                  NA               NA     1e-09

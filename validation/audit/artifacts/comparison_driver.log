@@ -1,0 +1,7 @@
+real_8000_compare_1 1 0.25
+real_8000_compare_2 1 0.21
+real_8000_compare_3 1 0.2
+historical_8000_compare_verified 1 0.2
+diagnostic_8000_compare_verified 1 22.19
+historical_12000_compare_verified 1 0.23
+diagnostic_12000_compare_verified 1 47.85

@@ -1,0 +1,11 @@
+group,PASS,FAIL,SKIPPED,NOT SUPPORTED,NOT EXECUTED
+original Rust unit baseline,12,0,0,0,0
+original synthetic baseline,9,0,0,0,0
+final cargo tests (original + new regressions),12,4,0,0,0
+parameter configurations,45,7,0,0,0
+validator controls including expected failures,15,0,0,0,0
+comparison rows current artifacts (historical excluded),635,49,0,0,80
+statistical grid cases Student,128,124,0,0,0
+statistical grid cases Fisher,252,0,0,0,0
+additional default 12K repetitions omitted by runtime policy,0,0,2,0,0
+end-of-audit remote recheck,0,0,1,0,0

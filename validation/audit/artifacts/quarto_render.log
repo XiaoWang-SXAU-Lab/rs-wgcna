@@ -1,0 +1,14 @@
+
+
+processing file: benchmark.qmd
+1/11                  
+2/11 [setup]          
+Error:
+! all(file.exists(file.path(audit, required))) is not TRUE
+Backtrace:
+    ▆
+ 1. └─base::stopifnot(all(file.exists(file.path(audit, required))))
+
+Quitting from benchmark.qmd:9-17 [setup]
+Execution halted
+WARN: Error encountered when rendering files

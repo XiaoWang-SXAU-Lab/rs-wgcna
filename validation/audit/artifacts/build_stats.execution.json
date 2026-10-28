@@ -1,0 +1,8 @@
+{
+  "name": "build_stats",
+  "command": "cargo build --release --example audit_stats",
+  "cwd": "/Users/shawn/Sync-Document/wgcna/rs_WGCNA",
+  "exit_code": 0,
+  "seconds": 1.3818299770355225,
+  "log": "artifacts/build_stats.log"
+}
