@@ -56,6 +56,7 @@ struct Params {
 #[derive(Debug, Deserialize)]
 #[serde(default)]
 struct FilterParams {
+    data_type: String, // count | expected_count | normalized_count | peak_area | protein_abundance
     normalize_method: String, // raw | log10p1 | log
     n_keep: usize,
     filter_method: String, // mad | var
@@ -67,6 +68,7 @@ struct FilterParams {
 impl Default for FilterParams {
     fn default() -> Self {
         FilterParams {
+            data_type: "count".into(),
             normalize_method: "log10p1".into(),
             n_keep: 8000,
             filter_method: "mad".into(),
@@ -444,8 +446,11 @@ fn run_filter(job_dir: &Path, params: &FilterParams) {
     };
 
     write_progress(job_dir, "filter", "running", 0.4, "filtering low-expression genes...");
+    // Low-expression filter runs on RAW counts (before normalization), per the
+    // WGCNA FAQ recommendation: a gene is noise if its raw count is below
+    // `cutoff` in more than `sample_percentage` fraction of samples.
     let keep: Vec<bool> = if params.sample_percentage > 0.0 {
-        low_expression_mask(&norm, params.cutoff, params.sample_percentage)
+        low_expression_mask(&exp.data, params.cutoff, params.sample_percentage)
     } else {
         vec![true; exp.n_genes()]
     };
