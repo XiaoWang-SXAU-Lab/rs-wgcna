@@ -398,3 +398,20 @@ pub fn write_expression(
     }
     Ok(())
 }
+
+/// Convert the first sheet of any supported workbook to TSV for Dashboard
+/// upload validation. Values stay textual; semantic validation happens before
+/// these bytes are admitted to a job.
+pub fn workbook_to_tsv(input: &str, output: &str) -> Result<()> {
+    let mut wb = open_workbook_auto(input)
+        .map_err(|e| WgcnaError::InvalidInput(format!("cannot open Excel file: {e}")))?;
+    let range = wb.worksheet_range_at(0)
+        .ok_or_else(|| WgcnaError::InvalidInput("workbook has no sheets".into()))?
+        .map_err(|e| WgcnaError::InvalidInput(format!("cannot read sheet: {e}")))?;
+    let mut writer = csv::WriterBuilder::new().delimiter(b'\t').from_path(output)?;
+    for row in range.rows() {
+        writer.write_record(row.iter().map(cell_to_string))?;
+    }
+    writer.flush()?;
+    Ok(())
+}

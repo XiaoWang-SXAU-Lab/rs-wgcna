@@ -371,7 +371,7 @@ fn write_progress(job_dir: &Path, step: &str, status: &str, progress: f64, messa
 fn read_params(job_dir: &Path) -> Params {
     let path = job_dir.join("params.json");
     match std::fs::read_to_string(&path) {
-        Ok(s) => serde_json::from_str(&s).unwrap_or_default(),
+        Ok(s) => serde_json::from_str(&s).unwrap_or_else(|e| panic!("Invalid params.json: {e}. Check parameter types and values; no defaults were silently substituted.")),
         Err(_) => Params::default(),
     }
 }
@@ -445,6 +445,12 @@ fn run_filter(job_dir: &Path, params: &FilterParams) {
         normalize(&exp.data, parse_norm(&params.normalize_method))
     };
 
+    for i in 0..norm.nrows() {
+        for j in 0..norm.ncols() {
+            assert!(norm[(i, j)].is_finite(),
+                "Normalization produced an invalid value at gene {} / sample {}. Check zeros/negative values and choose a compatible transform.", exp.genes[i], exp.samples[j]);
+        }
+    }
     write_progress(job_dir, "filter", "running", 0.4, "filtering low-expression genes...");
     // Low-expression filter runs on RAW counts (before normalization), per the
     // WGCNA FAQ recommendation: a gene is noise if its raw count is below
@@ -481,6 +487,8 @@ fn run_filter(job_dir: &Path, params: &FilterParams) {
         (out, out_names)
     };
 
+    assert!(filtered_genes.len() >= 2,
+        "Fewer than 2 variable genes remain after filtering. Relax the expression cutoff/sample percentage, select VAR, or check the input data.");
     write_expression(
         job_dir.join("step1_filtered.tsv").to_str().unwrap(),
         &filtered,
@@ -710,17 +718,20 @@ fn sample_info_one_hot(
         let rec = rec?;
         let id = rec.get(0).unwrap_or("").to_string();
         let val = rec.get(col_idx).unwrap_or("").to_string();
-        map.insert(id, val);
+        assert!(!id.trim().is_empty() && !val.trim().is_empty(),
+            "Missing sample ID or value in sample_info column {column}. Fill it before generating traits.");
+        assert!(map.insert(id.clone(), val).is_none(), "Duplicate sample ID in sample_info: {id}");
     }
 
     let mut categories: Vec<String> = Vec::new();
     for s in exp_samples {
-        let v = map.get(s).cloned().unwrap_or_default();
+        let v = map.get(s).cloned().unwrap_or_else(|| panic!("Missing sample_info row for sample {s}"));
         if !categories.contains(&v) {
             categories.push(v);
         }
     }
 
+    assert!(categories.len() >= 2, "The sample_info column {column} has only one category among retained samples. Choose a variable column.");
     let n = exp_samples.len();
     let c = categories.len();
     let mut data = Mat::<f64>::zeros(n, c);
@@ -1392,6 +1403,17 @@ fn run_cluster(job_dir: &Path, cp: &ClusterParams, threads: usize) {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(String::as_str) == Some("--convert-workbook") {
+        if args.len() != 4 {
+            eprintln!("usage: rs-wgcna-worker --convert-workbook <input.xls> <output.tsv>");
+            std::process::exit(2);
+        }
+        if let Err(e) = rs_wgcna::io::workbook_to_tsv(&args[2], &args[3]) {
+            eprintln!("{e}");
+            std::process::exit(1);
+        }
+        return;
+    }
     let mut job_dir: Option<PathBuf> = None;
     let mut step: Option<String> = None;
     let mut threads = std::thread::available_parallelism()
@@ -1455,5 +1477,42 @@ fn main() {
         write_progress(&job_dir, &step, "error", 1.0, &msg);
         eprintln!("worker error: {msg}");
         std::process::exit(1);
+    }
+}
+
+#[cfg(test)]
+mod defensive_tests {
+    use super::*;
+    fn fixture(name: &str) -> PathBuf {
+        let path = std::env::temp_dir().join(format!("rswgcna-worker-guard-{}-{name}", std::process::id()));
+        std::fs::create_dir_all(&path).unwrap();
+        path
+    }
+    #[test]
+    fn invalid_parameters_do_not_silently_become_defaults() {
+        let dir = fixture("params");
+        std::fs::write(dir.join("params.json"), r#"{"filter":{"n_keep":""}}"#).unwrap();
+        assert!(std::panic::catch_unwind(|| read_params(&dir)).is_err());
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+    #[test]
+    fn invalid_log_values_stop_before_writing_filtered_data() {
+        let dir = fixture("log");
+        std::fs::write(dir.join("expr.tsv"), "gene\ta\tb\tc\ng1\t0\t1\t2\ng2\t2\t3\t4\n").unwrap();
+        let mut p = FilterParams::default();
+        p.normalize_method = "log2".into();
+        assert!(std::panic::catch_unwind(|| run_filter(&dir, &p)).is_err());
+        assert!(!dir.join("step1_filtered.tsv").exists());
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+    #[test]
+    fn empty_filtered_matrix_stops_before_clustering() {
+        let dir = fixture("empty");
+        std::fs::write(dir.join("expr.tsv"), "gene\ta\tb\tc\ng1\t1\t1\t1\ng2\t2\t2\t2\n").unwrap();
+        let mut p = FilterParams::default();
+        p.normalize_method = "raw".into();
+        assert!(std::panic::catch_unwind(|| run_filter(&dir, &p)).is_err());
+        assert!(!dir.join("step1_filtered.tsv").exists());
+        std::fs::remove_dir_all(dir).unwrap();
     }
 }
